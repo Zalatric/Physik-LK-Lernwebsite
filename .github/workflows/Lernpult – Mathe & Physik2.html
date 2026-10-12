@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lernpult – Mathe & Physik</title>
+<style>
+:root{--bg:#eef3f8;--ink:#1b2a41;--mut:#5b6b82;--card:#fff;--line:#c9d6e6;--acc:#2457d6;--ok:#1f8a5b;--bad:#c8412f;--grid:#dbe5f1}
+@media(prefers-color-scheme:dark){:root{--bg:#121a28;--ink:#e6edf7;--mut:#93a3bb;--card:#1a2436;--line:#2c3a53;--acc:#7da2ff;--ok:#4fc58b;--bad:#ff8a78;--grid:#19243a}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+header,main{max-width:860px;margin:0 auto;padding:0 18px}
+header{padding-top:28px}
+h1{font:700 2rem Georgia,serif;margin:0 0 14px;letter-spacing:-.01em}
+h2,h3{font-family:Georgia,serif;margin:.2em 0 .5em}
+nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--ink)}
+nav button{background:none;border:0;border-bottom:4px solid transparent;margin-bottom:-2px;padding:9px 14px;font:inherit;font-weight:600;color:var(--mut);cursor:pointer}
+nav button.on{color:var(--ink);border-bottom-color:var(--acc)}
+section{display:none;padding:22px 0 60px}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--acc);padding:18px 20px;border-radius:4px;margin:14px 0}
+.fx{font:1.12rem "Cambria Math","STIX Two Math",Georgia,serif;padding:6px 0}
+.meta{color:var(--mut);font-size:.9rem;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn,.opt,.chip{background:var(--card);border:1px solid var(--ink);border-radius:4px;padding:9px 14px;cursor:pointer}
+.btn{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+@media(prefers-color-scheme:dark){.btn{color:#101828}}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;font:1.08rem "Cambria Math","STIX Two Math",Georgia,serif}
+.opt:hover:not(:disabled){border-color:var(--acc);background:var(--grid)}
+.opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,var(--card))}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--card))}
+.chip{margin:0 6px 8px 0;border-color:var(--line)}.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:8px 10px;width:100%;margin:4px 0 12px}
+label{font-weight:600;font-size:.92rem}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.row>*{flex:1 1 160px}.row .btn{flex:0 0 auto}
+.item{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0}
+.x{background:none;border:0;color:var(--bad);cursor:pointer;font-size:1.1rem}
+a{color:var(--acc)}
+[hidden]{display:none!important}
+.tbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.tbar select{width:auto;margin:0}
+.sw{width:32px;height:32px;padding:0;border-radius:50%;border:2px solid var(--card);cursor:pointer}
+.sw.on{outline:3px solid var(--acc);outline-offset:1px}
+#sym,#qsym{margin-bottom:8px}#sym .chip,#qsym .chip{padding:4px 10px;margin:0 4px 6px 0;font-family:"Cambria Math",Georgia,serif}
+#nx,#qx{min-height:320px;font:1.1rem/1.6 "Cambria Math","STIX Two Math",Georgia,serif;resize:vertical}
+#cv,#qc{display:block;width:100%;aspect-ratio:3/2;background:#fff;background-image:linear-gradient(#dbe5f1 1px,transparent 1px),linear-gradient(90deg,#dbe5f1 1px,transparent 1px);background-size:30px 30px;border:1px solid var(--line);border-radius:4px;touch-action:none;cursor:crosshair}
+#qc{aspect-ratio:12/7}#qnb .tbar b{margin-right:6px}
+body:not(.in) header,body:not(.in) main{display:none}
+body.in #gate{display:none}
+#gate{max-width:380px;margin:12vh auto 0;padding:0 18px}
+#gerr{color:var(--bad);min-height:1.4em;margin:0 0 8px}
+</style></head><body>
+<div id="gate"><div class="card"><h1>Lernpult</h1>
+<form id="gf"><label for="gp">Passwort</label><input id="gp" type="password" autocomplete="current-password" autofocus>
+<p id="gerr" role="alert"></p><button class="btn" type="submit">Anmelden</button></form></div></div>
+<header><h1>Lernpult</h1>
+<nav id="nav"><button data-t="quiz" class="on">Quiz</button><button data-t="themen">Mathe-Themen</button><button data-t="formeln">Meine Formeln</button><button data-t="notizen">Notizen</button><button data-t="dateien">Dateien</button><button data-t="cloud">Cloud</button></nav></header>
+<main>
+<section id="quiz" class="on">
+ <p>Stelle die Formel nach der gesuchten Größe um und wähle die richtige Umstellung.</p>
+ <div class="row"><div><label for="fach">Auswahl</label><select id="fach"><option value="mathe">Mathe</option><option value="physik">Physik</option><option value="eigene">Meine Formeln</option><option value="alle">Alles gemischt</option></select></div><button class="btn" id="go">Quiz starten</button></div>
+ <div id="qbox"></div>
+ <div class="card" id="qnb" hidden>
+  <div class="tbar"><b>Notizbuch</b>
+   <button class="chip on" data-m="d">Handschrift</button><button class="chip" data-m="t">Tippen</button>
+   <span style="flex:1"></span>
+   <button class="chip" data-p="-1" aria-label="Vorherige Seite">‹</button><span id="qp" class="meta"></span><button class="chip" data-p="1" aria-label="Nächste Seite">›</button><button class="chip" id="qa">Neue Seite</button></div>
+  <div id="qd"><div class="tbar" id="qtb">
+   <button class="sw on" data-c="#1b2a41" style="background:#1b2a41" aria-label="Schwarz"></button>
+   <button class="sw" data-c="#2457d6" style="background:#2457d6" aria-label="Blau"></button>
+   <button class="sw" data-c="#c8412f" style="background:#c8412f" aria-label="Rot"></button>
+   <button class="sw" data-c="#1f8a5b" style="background:#1f8a5b" aria-label="Grün"></button>
+   <button class="chip" id="qer">Radierer</button>
+   <select id="qw" aria-label="Strichstärke"><option value="2">Fein</option><option value="3" selected>Mittel</option><option value="7">Dick</option></select>
+   <button class="chip" id="qun">Rückgängig</button><button class="chip" id="qcl">Seite leeren</button></div>
+   <canvas id="qc" width="1200" height="700"></canvas></div>
+  <div id="qt" hidden><div id="qsym"></div><textarea id="qx" rows="10" placeholder="Rechenweg, Gedanken …"></textarea></div>
+ </div>
+</section>
+<section id="themen"><p class="meta">Thema wählen, dann Übersicht und Videos ansehen.</p><div id="tl"></div><div class="card" id="td"></div></section>
+<section id="formeln">
+ <h2>Eigene Formel eintragen</h2>
+ <p class="meta">Schreibe die Formel als Text, z. B. „F = m · a“. Sie erscheint danach im Quiz unter „Meine Formeln“.</p>
+ <label for="cf">Formel</label><input id="cf" placeholder="F = m · a">
+ <div class="row"><div><label for="cx">Gesuchte Größe</label><input id="cx" placeholder="m"></div><div><label for="cs">Richtige Umstellung</label><input id="cs" placeholder="m = F / a"></div></div>
+ <label for="cw">Falsche Antworten (eine pro Zeile, mindestens 2)</label><textarea id="cw" rows="3" placeholder="m = F · a&#10;m = a / F"></textarea>
+ <p class="meta">Ohne falsche Antworten wird daraus eine Karteikarte: Du siehst die Lösung erst nach Klick.</p>
+ <button class="btn" id="cadd">Formel speichern</button>
+ <h3 style="margin-top:28px">Gespeichert</h3><div id="cl"></div>
+</section>
+<section id="notizen">
+ <h2>Notizen</h2>
+ <p class="meta">Tippen oder mit Maus, Finger oder Stift schreiben. Alles wird automatisch gespeichert.</p>
+ <div><button class="btn" id="n1">Neue Textnotiz</button> <button class="btn" id="n2">Neue Handschrift-Notiz</button></div>
+ <div class="card" id="ned" hidden>
+  <div class="row"><div><label for="nt">Titel</label><input id="nt" placeholder="z. B. Aufgabe 3, Rechenweg Kreis"></div><button class="chip" id="nc">Schließen</button></div>
+  <div id="ntx"><div id="sym"></div><textarea id="nx" placeholder="Gedanken, Rechenweg …"></textarea></div>
+  <div id="ndr"><div id="tb" class="tbar">
+   <button class="sw on" data-c="#1b2a41" style="background:#1b2a41" aria-label="Schwarz"></button>
+   <button class="sw" data-c="#2457d6" style="background:#2457d6" aria-label="Blau"></button>
+   <button class="sw" data-c="#c8412f" style="background:#c8412f" aria-label="Rot"></button>
+   <button class="sw" data-c="#1f8a5b" style="background:#1f8a5b" aria-label="Grün"></button>
+   <button class="chip" id="er">Radierer</button>
+   <select id="tw" aria-label="Strichstärke"><option value="2">Fein</option><option value="3" selected>Mittel</option><option value="7">Dick</option></select>
+   <button class="chip" id="un">Rückgängig</button><button class="chip" id="cl">Seite leeren</button></div>
+   <canvas id="cv" width="1200" height="800"></canvas></div>
+  <p class="meta" id="ns"></p>
+ </div>
+ <h3 style="margin-top:24px">Meine Notizen</h3><div id="nl"></div>
+</section>
+<section id="dateien">
+ <h2>Dateien</h2>
+ <p class="meta">Skripte, Aufgabenblätter, Bilder oder PDFs. Sie bleiben nur in diesem Browser auf deinem Rechner.</p>
+ <div class="row"><div><label for="ff">Fach</label><select id="ff"><option>Mathe</option><option>Physik</option><option>Sonstiges</option></select></div><div><label for="fi">Dateien wählen</label><input type="file" id="fi" multiple></div></div>
+ <div id="fl"></div>
+</section>
+<section id="cloud">
+ <h2>Cloud</h2>
+ <p class="meta">Gemeinsame Dateien für alle. Jeder kann hochladen und ansehen, löschen darfst du nur deine eigenen.</p>
+ <p id="cst" class="meta">Verbinde …</p>
+ <div id="cup" hidden><div class="row"><div><label for="cf2">Fach</label><select id="cf2"><option>Mathe</option><option>Physik</option><option>Sonstiges</option></select></div><div><label for="cfi">Dateien wählen (max. 20 MB)</label><input type="file" id="cfi" multiple></div></div></div>
+ <div id="cll"></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert('Speichern im Browser hat nicht geklappt.')}};
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* Tabs */
+$('#nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+ document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+ e.target.classList.add('on');$('#'+t).classList.add('on')};
+
+/* Fragen: [Fach, Aufgabe, richtig, [falsch]] */
+const B=[
+['mathe','y = m·x + b  →  x','x = (y − b) / m',['x = (y + b) / m','x = y − b·m','x = m / (y − b)']],
+['mathe','a² + b² = c²  →  a','a = √(c² − b²)',['a = √(c² + b²)','a = c² − b²','a = c − b']],
+['mathe','A = ½·g·h  →  h','h = 2A / g',['h = A / (2g)','h = A·g / 2','h = 2g / A']],
+['mathe','U = 2·π·r  →  r','r = U / (2π)',['r = 2π / U','r = U·2π','r = U / π']],
+['mathe','V = π·r²·h  →  h','h = V / (π·r²)',['h = V·π·r²','h = V / (π·r)','h = π·r² / V']],
+['mathe','a·x + b = c  →  x','x = (c − b) / a',['x = (c + b) / a','x = c − b / a','x = a / (c − b)']],
+['mathe','K = K₀·(1 + p)ⁿ  →  K₀','K₀ = K / (1 + p)ⁿ',['K₀ = K·(1 + p)ⁿ','K₀ = K − (1 + p)ⁿ','K₀ = K / (1 + p·n)']],
+['mathe','A = π·r²  →  r','r = √(A / π)',['r = A / π','r = √A / π','r = √(A·π)']],
+['mathe','a / b = c / d  →  b','b = a·d / c',['b = a·c / d','b = c / (a·d)','b = a / (c·d)']],
+['physik','F = m·a  →  m','m = F / a',['m = F·a','m = a / F','m = F − a']],
+['physik','v = s / t  →  t','t = s / v',['t = s·v','t = v / s','t = s − v']],
+['physik','ρ = m / V  →  V','V = m / ρ',['V = m·ρ','V = ρ / m','V = ρ − m']],
+['physik','p = F / A  →  A','A = F / p',['A = F·p','A = p / F','A = p − F']],
+['physik','U = R·I  →  R','R = U / I',['R = U·I','R = I / U','R = U − I']],
+['physik','P = U·I  →  I','I = P / U',['I = P·U','I = U / P','I = P − U']],
+['physik','W = F·s  →  s','s = W / F',['s = W·F','s = F / W','s = W − F']],
+['physik','E = ½·m·v²  →  v','v = √(2E / m)',['v = 2E / m','v = √(E / (2m))','v = √(2E·m)']],
+['physik','s = ½·a·t²  →  t','t = √(2s / a)',['t = 2s / a','t = √(s / (2a))','t = √(2s·a)']],
+['physik','Q = c·m·ΔT  →  c','c = Q / (m·ΔT)',['c = Q·m·ΔT','c = Q·m / ΔT','c = m·ΔT / Q']],
+['physik','F = G·m₁·m₂ / r²  →  r','r = √(G·m₁·m₂ / F)',['r = G·m₁·m₂ / F','r = √(F / (G·m₁·m₂))','r = (G·m₁·m₂ / F)²']],
+['physik','T = 2π·√(l / g)  →  g','g = 4π²·l / T²',['g = 2π·l / T','g = l / (4π²·T²)','g = 4π·l / T²']]
+].map(([fach,q,a,w])=>({fach,q,a,w}));
+
+const eigene=()=>load('eigene',[]).map(c=>({fach:'eigene',q:`${c.f}  →  ${c.x}`,a:c.s,w:c.w,card:c.w.length<2}));
+
+/* Quiz */
+let pool=[],i=0,score=0,locked=false;
+$('#go').onclick=start;
+function start(){const f=$('#fach').value;
+ pool=shuf([...B,...eigene()].filter(q=>f==='alle'||q.fach===f));i=0;score=0;
+ if(!pool.length){$('#qbox').innerHTML='<p>Hier gibt es noch keine Fragen. Lege unter „Meine Formeln“ eigene an.</p>';return}
+ show()}
+function show(){locked=false;$('#qnb').hidden=false;const q=pool[i],box=$('#qbox');
+ if(!q){box.innerHTML=`<div class="card"><h3>${score} von ${pool.length} richtig</h3><button class="btn" id="again">Nochmal</button></div>`;return}
+ const body=q.card?'<button class="btn" id="rev">Lösung zeigen</button>':shuf([q.a,...q.w]).map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('');
+ box.innerHTML=`<div class="card"><p class="meta">Frage ${i+1} von ${pool.length}</p><div class="fx"><b>${esc(q.q)}</b></div>${body}<div id="fb"></div></div>`}
+function fin(ok){if(ok)score++;locked=true;
+ $('#fb').insertAdjacentHTML('beforeend',`<p><b style="color:var(--${ok?'ok':'bad'})">${ok?'Richtig.':'Nicht ganz.'}</b> Richtig ist: <span class="fx">${esc(pool[i].a)}</span></p><button class="btn" id="next">${i+1<pool.length?'Weiter':'Ergebnis'}</button>`)}
+$('#qbox').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.id==='again')return start();
+ if(b.id==='next'){i++;return show()}
+ if(b.id==='rev'){b.remove();$('#fb').innerHTML=`<div class="fx">${esc(pool[i].a)}</div><p>Gewusst?</p><button class="btn" data-g="1">Ja</button> <button class="opt" style="display:inline;width:auto" data-g="0">Nein</button>`;return}
+ if(b.dataset.g!==undefined){$('#fb').innerHTML='';return fin(b.dataset.g==='1')}
+ if(b.dataset.v!==undefined&&!locked){const ok=b.dataset.v===pool[i].a;
+  document.querySelectorAll('.opt').forEach(o=>{o.disabled=true;if(o.dataset.v===pool[i].a)o.classList.add('ok')});
+  if(!ok)b.classList.add('bad');fin(ok)}};
+
+/* Mathe-Themen */
+const T=[
+{n:'Bruchrechnen',t:'Brüche erweitern und kürzen, gleichnamig machen, addieren und subtrahieren. Multiplizieren: Zähler mal Zähler, Nenner mal Nenner. Dividieren heißt mit dem Kehrbruch multiplizieren.',f:['a/b + c/d = (a·d + c·b) / (b·d)','a/b · c/d = (a·c) / (b·d)','a/b : c/d = a/b · d/c']},
+{n:'Terme und Gleichungen umformen',t:'Äquivalenzumformungen: Auf beiden Seiten dasselbe tun. Erst Klammern auflösen, dann zusammenfassen, dann nach der Unbekannten auflösen. Binomische Formeln sparen Rechenarbeit.',f:['(a + b)² = a² + 2ab + b²','(a − b)² = a² − 2ab + b²','(a + b)·(a − b) = a² − b²']},
+{n:'Lineare Funktionen',t:'y = m·x + b: m ist die Steigung, b der y-Achsenabschnitt. Mit dem Steigungsdreieck zeichnest du die Gerade, die Nullstelle findest du mit y = 0.',f:['y = m·x + b','m = (y₂ − y₁) / (x₂ − x₁)','Nullstelle: x = −b / m']},
+{n:'Quadratische Gleichungen',t:'Erst in Normalform bringen, dann pq-Formel oder Mitternachtsformel nutzen. Die Diskriminante zeigt, wie viele Lösungen es gibt. Die Scheitelpunktform liefert den höchsten oder tiefsten Punkt.',f:['x² + p·x + q = 0  →  x = −p/2 ± √((p/2)² − q)','a·x² + b·x + c = 0  →  x = (−b ± √(b² − 4ac)) / (2a)','Diskriminante D = b² − 4ac']},
+{n:'Potenzen und Wurzeln',t:'Gleiche Basis: Exponenten beim Multiplizieren addieren, beim Dividieren subtrahieren. Potenz einer Potenz: Exponenten multiplizieren. Eine Wurzel ist eine Potenz mit Bruch im Exponenten.',f:['aᵐ · aⁿ = aᵐ⁺ⁿ','(aᵐ)ⁿ = aᵐ·ⁿ','ⁿ√a = a^(1/n)','a⁻ⁿ = 1 / aⁿ']},
+{n:'Satz des Pythagoras',t:'Gilt nur im rechtwinkligen Dreieck: Die Summe der Quadrate der Katheten ist das Quadrat der Hypotenuse. Die Hypotenuse liegt gegenüber dem rechten Winkel.',f:['a² + b² = c²','c = √(a² + b²)','a = √(c² − b²)']},
+{n:'Trigonometrie',t:'Im rechtwinkligen Dreieck verbinden Sinus, Kosinus und Tangens Winkel und Seitenlängen. Den Taschenrechner auf Grad (DEG) stellen. Für Umkehrungen nutzt du sin⁻¹, cos⁻¹, tan⁻¹.',f:['sin α = Gegenkathete / Hypotenuse','cos α = Ankathete / Hypotenuse','tan α = Gegenkathete / Ankathete','sin²α + cos²α = 1']},
+{n:'Ableitungen',t:'Die Ableitung gibt die Steigung der Tangente an. Wichtig sind Potenz-, Summen-, Produkt-, Quotienten- und Kettenregel. Extremstellen findest du mit f′(x) = 0.',f:['f(x) = xⁿ  →  f′(x) = n·xⁿ⁻¹','(u + v)′ = u′ + v′','(u·v)′ = u′·v + u·v′','f(g(x))′ = f′(g(x))·g′(x)']},
+{n:'Integralrechnung',t:'Das Integral ist die Umkehrung der Ableitung und liefert Flächeninhalte unter Kurven. Erst die Stammfunktion bilden, dann Grenzen einsetzen: obere Grenze minus untere.',f:['∫ xⁿ dx = xⁿ⁺¹ / (n + 1) + C','∫ₐᵇ f(x) dx = F(b) − F(a)']},
+{n:'Wahrscheinlichkeit',t:'Laplace: günstige durch mögliche Ergebnisse. Pfadregeln im Baumdiagramm: entlang eines Pfades multiplizieren, mehrere Pfade addieren. Binomialkoeffizient zählt Möglichkeiten ohne Reihenfolge.',f:['P(E) = günstige / mögliche Ergebnisse','C(n,k) = n! / (k!·(n − k)!)','P(A∪B) = P(A) + P(B) − P(A∩B)']}
+];
+let cur=0;
+function topics(){const e=encodeURIComponent,t=T[cur],v=load('vid',{})[t.n]||[];
+ const yt=q=>'https://www.youtube.com/results?search_query='+e(q);
+ $('#tl').innerHTML=T.map((x,k)=>`<button class="chip${k===cur?' on':''}" data-k="${k}">${esc(x.n)}</button>`).join('');
+ $('#td').innerHTML=`<h2>${esc(t.n)}</h2><p>${esc(t.t)}</p>${t.f.map(x=>`<div class="fx">${esc(x)}</div>`).join('')}
+ <h3 style="margin-top:20px">Videos</h3>
+ <p><a target="_blank" rel="noopener" href="${yt('Mathematrick '+t.n)}">Mathematrick zu „${esc(t.n)}“ auf YouTube</a><br><a target="_blank" rel="noopener" href="${yt('Lehrer Schmidt '+t.n)}">Lehrer Schmidt zu „${esc(t.n)}“ auf YouTube</a></p>
+ ${v.map((u,k)=>`<div class="item"><a target="_blank" rel="noopener" href="${esc(u)}">${esc(u)}</a><button class="x" data-d="${k}" aria-label="Link löschen">✕</button></div>`).join('')}
+ <div class="row" style="margin-top:12px"><div><label for="vi">Eigenen Video-Link zu diesem Thema merken</label><input id="vi" placeholder="https://www.youtube.com/watch?v=…"></div><button class="btn" id="va">Merken</button></div>`}
+$('#tl').onclick=e=>{const k=e.target.dataset.k;if(k===undefined)return;cur=+k;topics()};
+$('#td').onclick=e=>{const all=load('vid',{}),n=T[cur].n;
+ if(e.target.id==='va'){const u=$('#vi').value.trim();if(!/^https?:\/\//.test(u))return alert('Bitte einen Link mit https:// eingeben.');(all[n]=all[n]||[]).push(u);save('vid',all);topics()}
+ if(e.target.dataset.d!==undefined){all[n].splice(+e.target.dataset.d,1);save('vid',all);topics()}};
+
+/* Eigene Formeln */
+function formeln(){const l=load('eigene',[]);
+ $('#cl').innerHTML=l.length?l.map((c,k)=>`<div class="item"><div><div class="fx">${esc(c.f)}  →  ${esc(c.x)}</div><span class="meta">${esc(c.s)}${c.w.length<2?' (Karteikarte)':''}</span></div><button class="x" data-d="${k}" aria-label="Formel löschen">✕</button></div>`).join(''):'<p class="meta">Noch nichts gespeichert.</p>'}
+$('#cadd').onclick=()=>{const f=$('#cf').value.trim(),x=$('#cx').value.trim(),s=$('#cs').value.trim(),w=$('#cw').value.split('\n').map(z=>z.trim()).filter(Boolean);
+ if(!f||!x||!s)return alert('Bitte Formel, gesuchte Größe und richtige Umstellung ausfüllen.');
+ const l=load('eigene',[]);l.push({f,x,s,w});save('eigene',l);['cf','cx','cs','cw'].forEach(id=>$('#'+id).value='');formeln()};
+$('#cl').onclick=e=>{if(e.target.dataset.d===undefined)return;const l=load('eigene',[]);l.splice(+e.target.dataset.d,1);save('eigene',l);formeln()};
+
+/* Dateien (IndexedDB) */
+const db=new Promise((res,rej)=>{try{const r=indexedDB.open('lernpult',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+const tx=async(m,fn)=>{const d=await db;return new Promise((res,rej)=>{const t=d.transaction('f',m);let r;try{r=fn(t.objectStore('f'))}catch(e){return rej(e)}t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)})};
+async function dateien(){try{const l=(await tx('readonly',s=>s.getAll())).filter(f=>!f.note);
+ $('#fl').innerHTML=l.length?l.map(f=>`<div class="item"><div><b>${esc(f.name)}</b><br><span class="meta">${esc(f.fach)} · ${(f.size/1024).toFixed(0)} KB</span></div><div><button class="chip" data-o="${f.id}">Öffnen</button><button class="x" data-r="${f.id}" aria-label="Datei löschen">✕</button></div></div>`).join(''):'<p class="meta">Noch keine Dateien.</p>'}
+ catch(e){$('#fl').innerHTML='<p>Dateispeicher ist in diesem Browser nicht verfügbar. Versuche Chrome, Edge oder Firefox.</p>'}}
+$('#fi').onchange=async e=>{for(const f of e.target.files)await tx('readwrite',s=>s.add({name:f.name,type:f.type,size:f.size,fach:$('#ff').value,blob:f}));e.target.value='';dateien()};
+$('#fl').onclick=async e=>{const o=e.target.dataset.o,r=e.target.dataset.r;
+ if(r){await tx('readwrite',s=>s.delete(+r));dateien()}
+ if(o){const f=await tx('readonly',s=>s.get(+o)),a=document.createElement('a');a.href=URL.createObjectURL(f.blob);
+  if(/^(image|text|application\/pdf)/.test(f.type))a.target='_blank';else a.download=f.name;a.click()}};
+
+/* Notizen (im selben IndexedDB-Speicher, Eintrag note:true) */
+let nid=null,nk='',strokes=[],cs=null,tm,tool={e:false,c:'#1b2a41',w:3};
+const cv=$('#cv'),cx=cv.getContext('2d');
+$('#sym').innerHTML=[...'√²³π·÷±≈≠≤≥ΔΣ∫→½'].map(c=>`<button class="chip" data-s="${c}">${c}</button>`).join('');
+async function notizen(){let l=[];try{l=(await tx('readonly',s=>s.getAll())).filter(f=>f.note).sort((a,b)=>b.upd-a.upd)}catch(e){}
+ $('#nl').innerHTML=l.length?l.map(n=>`<div class="item"><div><b>${esc(n.title||'Ohne Titel')}</b><br><span class="meta">${n.kind==='draw'?'Handschrift':'Text'} · ${new Date(n.upd).toLocaleDateString('de-DE')}</span></div><div><button class="chip" data-o="${n.id}">Öffnen</button><button class="x" data-r="${n.id}" aria-label="Notiz löschen">✕</button></div></div>`).join(''):'<p class="meta">Noch keine Notizen.</p>'}
+async function doSave(){clearTimeout(tm);if(nid===null)return;
+ const n={id:nid,note:true,kind:nk,title:$('#nt').value,text:nk==='text'?$('#nx').value:'',strokes:nk==='draw'?strokes:[],upd:Date.now()};
+ try{await tx('readwrite',s=>s.put(n));$('#ns').textContent='Gespeichert';notizen()}catch(e){$('#ns').textContent='Speichern hat nicht geklappt.'}}
+function sv(){$('#ns').textContent='Speichert …';clearTimeout(tm);tm=setTimeout(doSave,700)}
+function edit(n){nid=n.id;nk=n.kind;strokes=n.strokes||[];$('#ned').hidden=false;$('#nt').value=n.title||'';
+ $('#ntx').hidden=nk!=='text';$('#ndr').hidden=nk!=='draw';$('#nx').value=n.text||'';$('#ns').textContent='';redraw()}
+async function newNote(kind){await doSave();const n={note:true,kind,title:'',text:'',strokes:[],upd:Date.now()};
+ try{n.id=await tx('readwrite',s=>s.add(n));edit(n);notizen()}catch(e){alert('Notizen können in diesem Browser nicht gespeichert werden.')}}
+$('#n1').onclick=()=>newNote('text');$('#n2').onclick=()=>newNote('draw');
+$('#nc').onclick=async()=>{await doSave();nid=null;$('#ned').hidden=true};
+$('#nt').oninput=sv;$('#nx').oninput=sv;
+$('#sym').onclick=e=>{const c=e.target.dataset.s;if(!c)return;const t=$('#nx');t.setRangeText(c,t.selectionStart,t.selectionEnd,'end');t.focus();sv()};
+$('#nl').onclick=async e=>{const o=e.target.dataset.o,r=e.target.dataset.r;
+ if(o){await doSave();edit(await tx('readonly',s=>s.get(+o)))}
+ if(r&&confirm('Notiz löschen?')){await tx('readwrite',s=>s.delete(+r));if(+r===nid){nid=null;$('#ned').hidden=true}notizen()}};
+
+/* Handschrift */
+function drawS(s){cx.save();cx.globalCompositeOperation=s.e?'destination-out':'source-over';cx.strokeStyle=s.c;cx.lineWidth=s.e?s.w*5:s.w;cx.lineCap=cx.lineJoin='round';cx.beginPath();
+ s.p.forEach(([x,y],k)=>k?cx.lineTo(x,y):cx.moveTo(x,y));if(s.p.length===1)cx.lineTo(s.p[0][0]+.01,s.p[0][1]);cx.stroke();cx.restore()}
+function redraw(){cx.clearRect(0,0,cv.width,cv.height);strokes.forEach(drawS)}
+const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);cs={e:tool.e,c:tool.c,w:tool.w,p:[pt(e)]};strokes.push(cs);drawS(cs)};
+cv.onpointermove=e=>{if(!cs)return;cs.p.push(pt(e));drawS({...cs,p:cs.p.slice(-2)})};
+cv.onpointerup=cv.onpointercancel=()=>{if(cs){cs=null;sv()}};
+$('#tb').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.c){tool.c=b.dataset.c;tool.e=false}
+ if(b.id==='er')tool.e=true;
+ if(b.id==='un'){strokes.pop();redraw();sv()}
+ if(b.id==='cl'&&confirm('Ganze Seite leeren?')){strokes=[];redraw();sv()}
+ document.querySelectorAll('#tb .sw').forEach(x=>x.classList.toggle('on',!tool.e&&x.dataset.c===tool.c));$('#er').classList.toggle('on',tool.e)};
+$('#tw').onchange=e=>tool.w=+e.target.value;
+
+/* Quiz-Notizbuch (mehrere Seiten, bleibt über alle Fragen erhalten) */
+let qb;try{qb=JSON.parse(localStorage.getItem('qnb'))}catch(e){}
+qb=qb&&qb.pages&&qb.pages.length?qb:{i:0,pages:[{s:[],t:''}]};
+let qs=null,qm,qtool={e:false,c:'#1b2a41',w:3};
+const qc=$('#qc'),qg=qc.getContext('2d'),pg=()=>qb.pages[qb.i];
+const qsave=()=>{clearTimeout(qm);qm=setTimeout(()=>{try{localStorage.setItem('qnb',JSON.stringify(qb))}catch(e){}},500)};
+function qdraw(s){qg.save();qg.globalCompositeOperation=s.e?'destination-out':'source-over';qg.strokeStyle=s.c;qg.lineWidth=s.e?s.w*5:s.w;qg.lineCap=qg.lineJoin='round';qg.beginPath();
+ s.p.forEach(([x,y],k)=>k?qg.lineTo(x,y):qg.moveTo(x,y));if(s.p.length===1)qg.lineTo(s.p[0][0]+.01,s.p[0][1]);qg.stroke();qg.restore()}
+function qview(){qg.clearRect(0,0,qc.width,qc.height);pg().s.forEach(qdraw);$('#qx').value=pg().t;$('#qp').textContent=`Seite ${qb.i+1} von ${qb.pages.length}`}
+const qpt=e=>{const r=qc.getBoundingClientRect();return[Math.round((e.clientX-r.left)*qc.width/r.width),Math.round((e.clientY-r.top)*qc.height/r.height)]};
+qc.onpointerdown=e=>{qc.setPointerCapture(e.pointerId);qs={e:qtool.e,c:qtool.c,w:qtool.w,p:[qpt(e)]};pg().s.push(qs);qdraw(qs)};
+qc.onpointermove=e=>{if(!qs)return;qs.p.push(qpt(e));qdraw({...qs,p:qs.p.slice(-2)})};
+qc.onpointerup=qc.onpointercancel=()=>{if(qs){qs=null;qsave()}};
+$('#qtb').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.c){qtool.c=b.dataset.c;qtool.e=false}
+ if(b.id==='qer')qtool.e=true;
+ if(b.id==='qun'){pg().s.pop();qview();qsave()}
+ if(b.id==='qcl'&&confirm('Diese Seite leeren?')){pg().s=[];pg().t='';qview();qsave()}
+ document.querySelectorAll('#qtb .sw').forEach(x=>x.classList.toggle('on',!qtool.e&&x.dataset.c===qtool.c));$('#qer').classList.toggle('on',qtool.e)};
+$('#qw').onchange=e=>qtool.w=+e.target.value;
+$('#qx').oninput=e=>{pg().t=e.target.value;qsave()};
+$('#qsym').innerHTML=[...'√²³π·÷±≈≠≤≥ΔΣ∫→½'].map(c=>`<button class="chip" data-s="${c}">${c}</button>`).join('');
+$('#qsym').onclick=e=>{const c=e.target.dataset.s;if(!c)return;const t=$('#qx');t.setRangeText(c,t.selectionStart,t.selectionEnd,'end');t.focus();pg().t=t.value;qsave()};
+$('#qnb').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.m){$('#qd').hidden=b.dataset.m!=='d';$('#qt').hidden=b.dataset.m!=='t';
+  document.querySelectorAll('#qnb [data-m]').forEach(x=>x.classList.toggle('on',x===b))}
+ if(b.dataset.p){qb.i=Math.min(Math.max(qb.i+ +b.dataset.p,0),qb.pages.length-1);qview();qsave()}
+ if(b.id==='qa'){qb.pages.push({s:[],t:''});qb.i=qb.pages.length-1;qview();qsave()}};
+qview();
+topics();formeln();dateien();notizen();
+
+/* Login (nur Sichtschutz, kein echter Schutz) */
+const PW_HASH='da9aa6cf0992c56b759427f7ff844e461c26e4dc6194bd7bd89d0f616c230698';
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('lernpult:'+t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+try{if(sessionStorage.getItem('auth')==='1')document.body.classList.add('in')}catch(e){}
+$('#gf').onsubmit=async e=>{e.preventDefault();
+ if(await sha($('#gp').value)===PW_HASH){try{sessionStorage.setItem('auth','1')}catch(x){}document.body.classList.add('in')}
+ else{$('#gerr').textContent='Falsches Passwort.';$('#gp').select()}};
+
+/* Cloud (db + assets, nur in veröffentlichter Seite) */
+let cdb=null,cas=null,cme='',cnames={};
+const kb=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+async function cloudInit(){
+ if(!window.claude){$('#cst').textContent='Die Cloud ist nur in der veröffentlichten Version verfügbar.';return}
+ try{cdb=await claude.use('db');cas=await claude.use('assets');const u=await claude.use('user');if(u){cme=await u.id();window.cu=u}}catch(e){}
+ if(!cdb){$('#cst').textContent='Bitte bei Claude anmelden, um die Cloud zu nutzen.';return}
+ $('#cst').textContent=cas?'':'Du darfst Dateien ansehen, aber nicht hochladen (nur Lese-Rechte).';
+ $('#cup').hidden=!cas;
+ cdb.collection('cloud').orderBy('ts','desc').onSnapshot(async sn=>{
+  const l=sn.docs.map(d=>({id:d.id,...d.data()}));
+  try{if(window.cu){const ids=[...new Set(l.map(x=>x.by).filter(Boolean))];const pr=await window.cu.profiles(ids);ids.forEach(i=>cnames[i]=(pr[i]&&pr[i].name)||'')}}catch(e){}
+  cloudList(l)},e=>{$('#cst').textContent='Cloud nicht erreichbar ('+(e.code||'Fehler')+').'})}
+function cloudList(l){
+ $('#cll').innerHTML=l.length?l.map(f=>`<div class="item"><div><b>${esc(f.name)}</b><br><span class="meta">${esc(f.fach)} · ${kb(f.size||0)} · ${esc(cnames[f.by]||'Unbekannt')}${f.by===cme?' (du)':''} · ${new Date(f.ts).toLocaleDateString('de-DE')}</span></div><div><a class="chip" style="text-decoration:none;color:inherit;display:inline-block" target="_blank" rel="noopener" href="/_blob/${esc(f.asset)}" download="${esc(f.name)}">Öffnen</a>${f.by===cme&&cas?`<button class="x" data-r="${esc(f.id)}" data-a="${esc(f.asset)}" aria-label="Datei löschen">✕</button>`:''}</div></div>`).join(''):'<p class="meta">Noch keine Dateien in der Cloud.</p>'}
+$('#cfi').onchange=async e=>{if(!cas||!cdb)return;const st=$('#cst');
+ for(const f of e.target.files){
+  if(f.size>20971520){st.textContent=f.name+' ist größer als 20 MB.';continue}
+  st.textContent='Lade hoch: '+f.name+' …';
+  try{const r=await cas.upload(f);
+   await cdb.collection('cloud').add({name:f.name,fach:$('#cf2').value,size:f.size,asset:r.id,by:cme,ts:Date.now()});st.textContent=''}
+  catch(x){st.textContent=x.code==='unsupported_type'?f.name+': Dieser Dateityp wird nicht unterstützt (erlaubt: Bilder, PDF, Video, Text/CSV/JSON).':'Upload fehlgeschlagen ('+(x.code||'Fehler')+').'}}
+ e.target.value=''};
+$('#cll').onclick=async e=>{const b=e.target.closest('[data-r]');if(!b||!confirm('Datei aus der Cloud löschen?'))return;
+ try{await cdb.collection('cloud').doc(b.dataset.r).delete();await cas.delete(b.dataset.a)}catch(x){$('#cst').textContent='Löschen fehlgeschlagen.'}};
+cloudInit();
+</script></body></html>
