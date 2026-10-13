@@ -60,7 +60,7 @@ section{padding-bottom:90px!important}
 <div id="gate"><div class="card"><h1>Lern_forum</h1>
 <form id="gf"><label for="gp">Passwort</label><input id="gp" type="password" autocomplete="current-password" autofocus>
 <p id="gerr" role="alert"></p><button class="btn" type="submit">Anmelden</button></form></div></div>
-<header><div class="hd"><h1>Lern_forum</h1><button class="chip" id="em">Bearbeiten</button></div>
+<header><div class="hd"><h1>Lern_forum</h1></div>
 <nav id="nav"><button data-t="start" class="on">Start</button><button data-t="mathe">Mathe</button><button data-t="physik">Physik</button><button data-t="buecher">Bücher</button><button data-t="formeln">Meine Formeln</button><button data-t="notizen">Notizen</button><button data-t="dateien">Dateien</button><button data-t="cloud">Cloud</button></nav>
 <div id="sub" class="tbar" hidden><button class="chip on" data-v="themen">Themen</button><button class="chip" data-v="quiz">Quiz</button></div></header>
 <main>
@@ -164,7 +164,6 @@ const curTheme=()=>document.documentElement.dataset.theme||(matchMedia('(prefers
 const themeLabel=()=>{$('#tm').textContent=curTheme()==='dark'?'☀ Hell':'☾ Dunkel'};
 $('#tm').onclick=()=>{const t=curTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}themeLabel()};
 themeLabel();
-$('#em').onclick=()=>{emode=!emode;$('#em').classList.toggle('on',emode);$('#em').textContent=emode?'Bearbeiten: an':'Bearbeiten';topics()};
 
 /* Fragen: [Fach, Aufgabe, richtig, [falsch]] */
 const B=[
@@ -243,7 +242,7 @@ let TP=load('tp',null);if(!TP||!TP.mathe)TP={mathe:T.map(x=>({...x,kids:[]})),ph
 function topics(){const L=TP[fc]||[];if(cur>=L.length)cur=0;const t=L[cur],e=encodeURIComponent;
  $('#th2').textContent=(fc==='mathe'?'Mathe':'Physik')+' – Themen';
  $('#tl').innerHTML=L.map((x,k)=>`<button class="chip${k===cur?' on':''}" data-k="${k}">${esc(x.n)}</button>`).join('');
- if(!t){$('#td').innerHTML='<p>Noch keine Themen. Schalte oben rechts „Bearbeiten“ ein, um welche hinzuzufügen.</p>';ted();return}
+ if(!t){$('#td').innerHTML='<p>Noch keine Themen.</p>';ted();return}
  const kids=t.kids||[];if(ck>=kids.length)ck=-1;
  const it=ck>=0?kids[ck]:t,key=ck>=0?t.n+'›'+it.n:t.n,v=load('vid',{})[key]||[],yt=q=>'https://www.youtube.com/results?search_query='+e(q);
  $('#td').innerHTML=(kids.length?`<div style="margin-bottom:10px"><button class="chip${ck<0?' on':''}" data-c="-1">Überblick</button>${kids.map((k,j)=>`<button class="chip${j===ck?' on':''}" data-c="${j}">${esc(k.n)}</button>`).join('')}</div>`:'')+
