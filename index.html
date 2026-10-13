@@ -61,7 +61,8 @@ section{padding-bottom:90px!important}
 <main>
 <section id="start" class="on">
  <h2>Willkommen im Lern_forum</h2>
- <p class="meta">Wähle oben ein Fach und ein Thema oder starte ein Quiz.</p>
+ <p class="meta">Wähle ein Fach:</p>
+ <div class="row" style="margin-top:12px"><button class="btn" data-go="mathe">Mathe</button><button class="btn" data-go="physik">Physik</button></div>
 </section>
 <section id="quiz">
  <h2 id="qh"></h2>
@@ -151,6 +152,7 @@ function go(t,v){tab=t;const m=t==='mathe'||t==='physik';if(m){fc=t;if(v)sub=v}
  if(t==='buecher')books();if(m){topics();qsetup()}}
 $('#nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;cur=0;ck=-1;go(t,'themen')};
 $('#sub').onclick=e=>{const v=e.target.dataset.v;if(v)go(tab,v)};
+$('#start').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;cur=0;ck=-1;go(b.dataset.go,'themen')};
 $('#em').onclick=()=>{emode=!emode;$('#em').classList.toggle('on',emode);$('#em').textContent=emode?'Bearbeiten: an':'Bearbeiten';topics()};
 
 /* Fragen: [Fach, Aufgabe, richtig, [falsch]] */
