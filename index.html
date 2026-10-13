@@ -3,11 +3,12 @@
 <title>Lern_forum – Mathe & Physik</title>
 <style>
 :root{--bg:#eef3f8;--ink:#1b2a41;--mut:#5b6b82;--card:#fff;--line:#c9d6e6;--acc:#2457d6;--ok:#1f8a5b;--bad:#c8412f;--grid:#dbe5f1}
-@media(prefers-color-scheme:dark){:root{--bg:#121a28;--ink:#e6edf7;--mut:#93a3bb;--card:#1a2436;--line:#2c3a53;--acc:#7da2ff;--ok:#4fc58b;--bad:#ff8a78;--grid:#19243a}}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a28;--ink:#e6edf7;--mut:#93a3bb;--card:#1a2436;--line:#2c3a53;--acc:#7da2ff;--ok:#4fc58b;--bad:#ff8a78;--grid:#19243a}}
+:root[data-theme="dark"]{--bg:#121a28;--ink:#e6edf7;--mut:#93a3bb;--card:#1a2436;--line:#2c3a53;--acc:#7da2ff;--ok:#4fc58b;--bad:#ff8a78;--grid:#19243a}
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.55 system-ui,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
 header,main{max-width:860px;margin:0 auto;padding:0 18px}
-header{padding-top:28px}
+header{padding-top:calc(60px + env(safe-area-inset-top,0px))}
 h1{font:700 2rem Georgia,serif;margin:0 0 14px;letter-spacing:-.01em}
 h2,h3{font-family:Georgia,serif;margin:.2em 0 .5em}
 nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--ink)}
@@ -20,7 +21,8 @@ section{display:none;padding:22px 0 60px}section.on{display:block}
 button,input,select,textarea{font:inherit;color:inherit}
 .btn,.opt,.chip{background:var(--card);border:1px solid var(--ink);border-radius:4px;padding:9px 14px;cursor:pointer}
 .btn{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
-@media(prefers-color-scheme:dark){.btn{color:#101828}}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#101828}}
+:root[data-theme="dark"] .btn{color:#101828}
 .opt{display:block;width:100%;text-align:left;margin:8px 0;font:1.08rem "Cambria Math","STIX Two Math",Georgia,serif}
 .opt:hover:not(:disabled){border-color:var(--acc);background:var(--grid)}
 .opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,var(--card))}
@@ -51,7 +53,10 @@ body.in #gate{display:none}
 #ft{position:fixed;left:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:.78rem;color:var(--mut);background:var(--card);border:1px solid var(--line);border-radius:4px;padding:3px 8px;z-index:5;max-width:calc(100% - 20px)}
 section{padding-bottom:90px!important}
 .pre{white-space:pre-wrap}
+#tm{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:10px;z-index:10;margin:0;padding:7px 12px;font-weight:600}
+.row .btn.big{flex:1 1 220px;padding:36px 20px;font-size:1.7rem;border-radius:8px}
 </style></head><body>
+<button class="chip" id="tm" type="button" aria-label="Hell/Dunkel umschalten">◐ Dunkel</button>
 <div id="gate"><div class="card"><h1>Lern_forum</h1>
 <form id="gf"><label for="gp">Passwort</label><input id="gp" type="password" autocomplete="current-password" autofocus>
 <p id="gerr" role="alert"></p><button class="btn" type="submit">Anmelden</button></form></div></div>
@@ -62,7 +67,7 @@ section{padding-bottom:90px!important}
 <section id="start" class="on">
  <h2>Willkommen im Lern_forum</h2>
  <p class="meta">Wähle ein Fach:</p>
- <div class="row" style="margin-top:12px"><button class="btn" data-go="mathe">Mathe</button><button class="btn" data-go="physik">Physik</button></div>
+ <div class="row" style="margin-top:12px"><button class="btn big" data-go="mathe">Mathe</button><button class="btn big" data-go="physik">Physik</button></div>
 </section>
 <section id="quiz">
  <h2 id="qh"></h2>
@@ -153,6 +158,12 @@ function go(t,v){tab=t;const m=t==='mathe'||t==='physik';if(m){fc=t;if(v)sub=v}
 $('#nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;cur=0;ck=-1;go(t,'themen')};
 $('#sub').onclick=e=>{const v=e.target.dataset.v;if(v)go(tab,v)};
 $('#start').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;cur=0;ck=-1;go(b.dataset.go,'themen')};
+/* Hell/Dunkel */
+try{const s=localStorage.getItem('theme');if(s==='dark'||s==='light')document.documentElement.dataset.theme=s}catch(e){}
+const curTheme=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+const themeLabel=()=>{$('#tm').textContent=curTheme()==='dark'?'☀ Hell':'☾ Dunkel'};
+$('#tm').onclick=()=>{const t=curTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}themeLabel()};
+themeLabel();
 $('#em').onclick=()=>{emode=!emode;$('#em').classList.toggle('on',emode);$('#em').textContent=emode?'Bearbeiten: an':'Bearbeiten';topics()};
 
 /* Fragen: [Fach, Aufgabe, richtig, [falsch]] */
