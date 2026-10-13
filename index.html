@@ -61,18 +61,11 @@ section{padding-bottom:90px!important}
 <main>
 <section id="start" class="on">
  <h2>Willkommen im Lern_forum</h2>
- <div class="card"><h3>KI-Lernhilfe</h3>
-  <div class="row"><div><label for="bt">Aufgabe auswählen</label><select id="bt"></select></div>
-  <div><label for="bm">Art der Hilfe</label><select id="bm"><option value="sol">Lösung anzeigen</option><option value="step" selected>Schritt für Schritt durchgehen</option><option value="hint">Nur Denkanstöße geben</option></select></div></div>
-  <label for="bq">Deine Frage / wo hängst du?</label><textarea id="bq" rows="3"></textarea>
-  <button class="btn" id="bs">Fragen</button> <button class="chip" id="bn">Neues Gespräch</button>
-  <p class="meta" id="bst"></p><div id="bl"></div></div>
+ <p class="meta">Wähle oben ein Fach und ein Thema oder starte ein Quiz.</p>
 </section>
 <section id="quiz">
  <h2 id="qh"></h2>
- <div class="row"><div><label for="qsrc">Quiz-Art</label><select id="qsrc"><option value="std">Formeln umstellen</option><option value="eigene">Meine Formeln</option><option value="ki">KI-Quiz aus Themenbereichen</option></select></div><button class="btn" id="go">Quiz starten</button></div>
- <div id="qki" hidden><p class="meta">Themenbereiche wählen (mehrere möglich):</p><div id="qtp"></div>
-  <label for="qn">Anzahl Fragen</label><select id="qn"><option>5</option><option selected>8</option><option>12</option></select></div>
+ <div class="row"><div><label for="qsrc">Quiz-Art</label><select id="qsrc"><option value="std">Formeln umstellen</option><option value="eigene">Meine Formeln</option></select></div><button class="btn" id="go">Quiz starten</button></div>
  <div id="qbox"></div>
  <div class="card" id="qnb" hidden>
   <div class="tbar"><b>Notizbuch</b>
@@ -132,12 +125,6 @@ section{padding-bottom:90px!important}
  <h2>Bücher</h2>
  <div class="row"><div><label for="bf">Fach</label><select id="bf"><option value="mathe">Mathe</option><option value="physik">Physik</option></select></div><div><label for="bi">Buchseiten hochladen (Foto oder PDF)</label><input type="file" id="bi" multiple accept="image/*,application/pdf"></div></div>
  <div id="bl2"></div>
- <div class="card"><h3>Seite scannen und neue Aufgaben erzeugen</h3>
-  <p class="meta">Fotografiere eine Buchseite. Die KI liest Thema und Aufgaben und erstellt neue, passende Aufgaben als Quiz (für das oben gewählte Fach).</p>
-  <div class="row"><div><label for="si">Kamera / Foto</label><input type="file" id="si" accept="image/*" capture="environment" multiple></div>
-  <div><label for="sk">Aufgabenart</label><select id="sk"><option value="direkt">Normale Aufgaben (direkter Arbeitsauftrag)</option><option value="lore">Textaufgaben mit Geschichte</option></select></div>
-  <div><label for="sn">Anzahl</label><select id="sn"><option>3</option><option selected>5</option><option>8</option></select></div></div>
-  <button class="btn" id="sg">Aufgaben erzeugen</button><p class="meta" id="sst"></p></div>
 </section>
 <section id="cloud">
  <h2>Cloud</h2>
@@ -157,13 +144,11 @@ const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.ra
 
 /* Navigation */
 let tab='start',sub='themen',fc='mathe',cur=0,ck=-1,emode=false;
-const NOAI='Die KI-Funktionen laufen nur in der Claude-Version der Seite (nicht auf GitHub Pages) und brauchen eine Anmeldung bei Claude.';
-const sam=async()=>{try{return window.claude?await claude.use('sample'):null}catch(e){return null}};
 function go(t,v){tab=t;const m=t==='mathe'||t==='physik';if(m){fc=t;if(v)sub=v}
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
  $('#sub').hidden=!m;document.querySelectorAll('#sub [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===sub));
  const id=m?sub:t;document.querySelectorAll('section').forEach(x=>x.classList.toggle('on',x.id===id));
- if(t==='start')bfill();if(t==='buecher')books();if(m){topics();qsetup()}}
+ if(t==='buecher')books();if(m){topics();qsetup()}}
 $('#nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;cur=0;ck=-1;go(t,'themen')};
 $('#sub').onclick=e=>{const v=e.target.dataset.v;if(v)go(tab,v)};
 $('#em').onclick=()=>{emode=!emode;$('#em').classList.toggle('on',emode);$('#em').textContent=emode?'Bearbeiten: an':'Bearbeiten';topics()};
@@ -196,44 +181,23 @@ const B=[
 const eigene=()=>load('eigene',[]).map(c=>({fach:'eigene',q:`${c.f}  →  ${c.x}`,a:c.s,w:c.w,card:c.w.length<2}));
 
 /* Quiz */
-let pool=[],i=0,score=0,locked=false,hist=[],qsel=new Set(),scanQ=[];
-const okQ=r=>(Array.isArray(r)?r:(r&&r.fragen)||[]).filter(x=>x&&x.q&&x.a&&Array.isArray(x.w)&&x.w.length>1).map(x=>({fach:'ki',q:String(x.q),a:String(x.a),w:x.w.map(String),e:x.e?String(x.e):''}));
-const GG='Schreibe alle Formeln und Rechnungen in mathematischer GeoGebra-Schreibweise (z. B. x^2, sqrt(x), (a+b)/c, a*b, pi, sin(x)), jede Rechenzeile in einer eigenen Zeile.';
+let pool=[],i=0,score=0,locked=false,hist=[];
 function msg(t){$('#qbox').innerHTML='<p>'+esc(t)+'</p>'}
-function qsetup(){$('#qh').textContent=(fc==='mathe'?'Mathe':'Physik')+' – Quiz';
- $('#qtp').innerHTML=TP[fc].map(t=>`<button class="chip${qsel.has(fc+':'+t.n)?' on':''}" data-k="${esc(t.n)}">${esc(t.n)}</button>`).join('')||'<p class="meta">Noch keine Themen.</p>'}
-$('#qsrc').onchange=()=>$('#qki').hidden=$('#qsrc').value!=='ki';
-$('#qtp').onclick=e=>{const k=e.target.dataset.k;if(k===undefined)return;const q=fc+':'+k;qsel.has(q)?qsel.delete(q):qsel.add(q);qsetup()};
+function qsetup(){$('#qh').textContent=(fc==='mathe'?'Mathe':'Physik')+' – Quiz'}
 $('#go').onclick=start;
-function runPool(a,f){pool=a;i=0;score=0;hist=[];go(f,'quiz');show()}
 async function start(){const s=$('#qsrc').value;hist=[];i=0;score=0;
- if(s==='ki')return kiQuiz();
  pool=shuf(s==='eigene'?eigene():B.filter(q=>q.fach===fc));
  if(!pool.length)return msg('Hier gibt es noch keine Fragen. Lege unter „Meine Formeln“ eigene an.');
  show()}
-async function kiQuiz(){const th=TP[fc].filter(t=>qsel.has(fc+':'+t.n));
- if(!th.length)return msg('Bitte mindestens einen Themenbereich wählen.');
- const smp=await sam();if(!smp)return msg(NOAI);
- msg('Quiz wird erstellt …');
- const ctx=th.map(t=>t.n+': '+t.t+' '+(t.f||[]).join('; ')+(t.kids||[]).map(k=>' | '+k.n+': '+k.t).join('')).join('\n');
- try{const r=await smp.json(`Erstelle ${$('#qn').value} Multiple-Choice-Aufgaben für das Fach ${fc==='mathe'?'Mathe':'Physik'} (Schulniveau, Deutsch) gemischt zu diesen Themen:\n${ctx}\n${GG}\nAntworte NUR mit einem JSON-Array: [{"q":"Aufgabe","a":"richtige Antwort","w":["falsch1","falsch2","falsch3"],"e":"vollständige Erklärung, wie man Schritt für Schritt zur Lösung kommt und warum"}]. Variation ${Math.random().toString(36).slice(2,7)}.`,{cache:false});
-  pool=okQ(r);if(!pool.length)return msg('Das hat nicht geklappt. Bitte nochmal versuchen.');show()}
- catch(e){msg('KI-Quiz fehlgeschlagen ('+(e.code||'Fehler')+').')}}
 function show(){locked=false;$('#qnb').hidden=false;const q=pool[i],box=$('#qbox');
- if(!q){box.innerHTML=`<div class="card"><h3>${score} von ${pool.length} richtig</h3><button class="btn" id="again">Nochmal</button></div><h3>Deine Antworten</h3>`+hist.map((h,k)=>`<div class="card" style="border-left-color:var(--${h.ok?'ok':'bad'})"><div class="fx pre"><b>${esc(h.o.q)}</b></div><p>Deine Antwort: <span class="fx">${esc(h.g)}</span> ${h.ok?'✓':'✗'}<br>Richtig: <span class="fx">${esc(h.o.a)}</span></p><button class="chip" data-x="${k}">Erklärung anzeigen</button><div class="fx pre" id="ex${k}"></div></div>`).join('');return}
+ if(!q){box.innerHTML=`<div class="card"><h3>${score} von ${pool.length} richtig</h3><button class="btn" id="again">Nochmal</button></div><h3>Deine Antworten</h3>`+hist.map((h,k)=>`<div class="card" style="border-left-color:var(--${h.ok?'ok':'bad'})"><div class="fx pre"><b>${esc(h.o.q)}</b></div><p>Deine Antwort: <span class="fx">${esc(h.g)}</span> ${h.ok?'✓':'✗'}<br>Richtig: <span class="fx">${esc(h.o.a)}</span></p></div>`).join('');return}
  const body=q.card?'<button class="btn" id="rev">Lösung zeigen</button>':shuf([q.a,...q.w]).map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('');
  box.innerHTML=`<div class="card"><p class="meta">Frage ${i+1} von ${pool.length}</p><div class="fx pre"><b>${esc(q.q)}</b></div>${body}<div id="fb"></div></div>`}
 function fin(ok,g){if(ok)score++;locked=true;hist.push({o:pool[i],ok,g});
  $('#fb').insertAdjacentHTML('beforeend',`<p><b style="color:var(--${ok?'ok':'bad'})">${ok?'Richtig.':'Nicht ganz.'}</b> Richtig ist: <span class="fx">${esc(pool[i].a)}</span></p><button class="btn" id="next">${i+1<pool.length?'Weiter':'Ergebnis'}</button>`)}
-async function explain(k){const h=hist[k],o=h.o,el=$('#ex'+k);if(o.e){el.textContent=o.e;return}
- const smp=await sam();if(!smp){el.textContent='Aufgabe: '+o.q+'\nRichtig: '+o.a+'\n(Ausführliche Erklärungen gibt es in der Claude-Version der Seite.)';return}
- el.textContent='Erklärung wird erstellt …';
- try{const r=await smp(`Erkläre vollständig und Schritt für Schritt (Deutsch, Schulniveau), wie man bei dieser Aufgabe auf die richtige Lösung kommt und warum.\nAufgabe: ${o.q}\nRichtige Lösung: ${o.a}\n${GG}`,{cache:false});o.e=r.text;el.textContent=r.text}
- catch(e){el.textContent='Erklärung fehlgeschlagen.'}}
 $('#qbox').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.id==='again'){pool=shuf(pool);i=0;score=0;hist=[];return show()}
  if(b.id==='next'){i++;return show()}
- if(b.dataset.x!==undefined)return explain(+b.dataset.x);
  if(b.id==='rev'){b.remove();$('#fb').innerHTML=`<div class="fx">${esc(pool[i].a)}</div><p>Gewusst?</p><button class="btn" data-g="1">Ja</button> <button class="opt" style="display:inline;width:auto" data-g="0">Nein</button>`;return}
  if(b.dataset.g!==undefined){$('#fb').innerHTML='';return fin(b.dataset.g==='1',b.dataset.g==='1'?'(gewusst)':'(nicht gewusst)')}
  if(b.dataset.v!==undefined&&!locked){const ok=b.dataset.v===pool[i].a;
@@ -289,41 +253,15 @@ $('#td').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.d!==undefined){all[key].splice(+b.dataset.d,1);save('vid',all);topics()}
  if(b.id==='del'&&confirm('Wirklich löschen?')){if(ck>=0)t.kids.splice(ck,1);else{TP[fc].splice(cur,1);cur=0}ck=-1;save('tp',TP);topics()}};
 
-/* KI-Lernhilfe */
-let chat=[];
-function bfill(){const o=(g,a)=>a.length?`<optgroup label="${g}">${a.map(x=>`<option value="${esc(x.q+'||'+x.a)}">${esc(x.q.slice(0,80))}</option>`).join('')}</optgroup>`:'';
- const v=$('#bt').value;$('#bt').innerHTML='<option value="">Freie Frage (ohne Aufgabe)</option>'+o('Mathe',B.filter(x=>x.fach==='mathe'))+o('Physik',B.filter(x=>x.fach==='physik'))+o('Meine Formeln',eigene())+o('Gescannte Aufgaben',scanQ);$('#bt').value=v}
-const INS={sol:'Zeige die vollständige Lösung mit kurzer Begründung.',step:'Gehe die Aufgabe in übersichtlichen, nummerierten Schritten durch und erkläre jeden Schritt kurz.',hint:'Gib NUR Denkanstöße und Leitfragen, verrate die Lösung nicht und rechne nichts vollständig vor.'};
-function bshow(){$('#bl').innerHTML=chat.map(m=>`<div class="card" style="border-left-color:var(--${m.role==='user'?'mut':'acc'})"><b>${m.role==='user'?'Du':'Lernhilfe'}</b><div class="fx pre">${esc(m.show)}</div></div>`).join('')}
-$('#bn').onclick=()=>{chat=[];bshow();$('#bst').textContent=''};
-$('#bs').onclick=async()=>{const q=$('#bq').value.trim(),tv=$('#bt').value;if(!q&&!tv)return $('#bst').textContent='Wähle eine Aufgabe oder stelle eine Frage.';
- const smp=await sam();if(!smp)return $('#bst').textContent=NOAI;
- const task=tv?'Aufgabe: '+tv.split('||')[0]+' (Musterlösung nur für dich: '+tv.split('||')[1]+')\n':'';
- chat.push({role:'user',show:q||'(Aufgabe ausgewählt)',content:`Du bist ein freundlicher Nachhilfelehrer für Mathe und Physik (Deutsch, Schulniveau). ${INS[$('#bm').value]} ${GG}\n\n${task}${q}`});
- const inp=chat.map(m=>({role:m.role,content:m.content})),a={role:'assistant',show:'Denkt nach …',content:''};chat.push(a);bshow();$('#bq').value='';$('#bst').textContent='';
- try{const r=await smp(inp,{cache:false,onText:({text})=>{a.show=text;bshow()}});a.show=a.content=r.text}
- catch(e){chat.pop();chat.pop();$('#bst').textContent='Das hat nicht geklappt ('+(e.code||'Fehler')+').'}bshow()};
-
-/* Bücher + Scan */
-const shrink=f=>new Promise(res=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);res(b||f)},'image/jpeg',.85)};im.onerror=()=>res(f);im.src=u});
+/* Bücher */
 async function books(){const f=$('#bf').value;let l=[];try{l=(await tx('readonly',s=>s.getAll())).filter(x=>x.book===f)}catch(e){}
- $('#bl2').innerHTML=l.length?l.map(x=>`<div class="item"><div><b>${esc(x.name)}</b><br><span class="meta">${(x.size/1024).toFixed(0)} KB</span></div><div>${/^image/.test(x.type)?`<button class="chip" data-s="${x.id}">Aufgaben daraus</button>`:''}<button class="chip" data-o="${x.id}">Öffnen</button><button class="x" data-r="${x.id}" aria-label="Seite löschen">✕</button></div></div>`).join(''):'<p class="meta">Noch keine Buchseiten für dieses Fach.</p>'}
+ $('#bl2').innerHTML=l.length?l.map(x=>`<div class="item"><div><b>${esc(x.name)}</b><br><span class="meta">${(x.size/1024).toFixed(0)} KB</span></div><div><button class="chip" data-o="${x.id}">Öffnen</button><button class="x" data-r="${x.id}" aria-label="Seite löschen">✕</button></div></div>`).join(''):'<p class="meta">Noch keine Buchseiten für dieses Fach.</p>'}
 $('#bf').onchange=books;
 $('#bi').onchange=async e=>{try{for(const f of e.target.files)await tx('readwrite',s=>s.add({name:f.name,type:f.type,size:f.size,book:$('#bf').value,blob:f}))}catch(x){alert('Speichern hat nicht geklappt.')}e.target.value='';books()};
 $('#bl2').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.r){await tx('readwrite',s=>s.delete(+b.dataset.r));books()}
  if(b.dataset.o){const f=await tx('readonly',s=>s.get(+b.dataset.o)),a=document.createElement('a');a.href=URL.createObjectURL(f.blob);if(/^(image|application\/pdf)/.test(f.type))a.target='_blank';else a.download=f.name;a.click()}
- if(b.dataset.s){const f=await tx('readonly',s=>s.get(+b.dataset.s));scan([f.blob])}};
-$('#sg').onclick=()=>{const f=[...$('#si').files];if(!f.length)return $('#sst').textContent='Bitte zuerst ein Foto aufnehmen oder auswählen.';scan(f)};
-async function scan(blobs){const st=$('#sst'),smp=await sam();if(!smp)return st.textContent=NOAI;
- const f=$('#bf').value;st.textContent='Seite wird gelesen, Aufgaben werden erstellt …';
- try{const lim=await smp.limits();if(!lim||!lim.images)return st.textContent='Bildanalyse ist hier nicht verfügbar.';
-  const imgs=await Promise.all(blobs.slice(0,3).map(shrink)),lore=$('#sk').value==='lore';
-  const r=await smp.json(`Das Bild zeigt eine Buchseite (Fach ${f==='mathe'?'Mathe':'Physik'}, Deutsch). Erkenne Thema und Aufgaben der Seite. Erstelle ${$('#sn').value} NEUE Multiple-Choice-Aufgaben, die thematisch und im Stil und Schwierigkeitsgrad zu den Aufgaben auf der Seite passen, aber nicht abgeschrieben sind (neue Zahlen und Situationen). ${lore?'Jede Aufgabe ist eine kurze Textaufgabe mit kleiner Geschichte (Lore) und Alltagssituation.':'Jede Aufgabe ist eine normale Aufgabe mit direktem Arbeitsauftrag (z. B. „Berechne …“), ohne Geschichte.'} ${GG} Antworte NUR mit einem JSON-Array: [{"q":"Aufgabe","a":"richtige Antwort","w":["falsch1","falsch2","falsch3"],"e":"vollständige Schritt-für-Schritt-Erklärung"}]. Variation ${Math.random().toString(36).slice(2,7)}.`,{images:imgs,cache:false});
-  const a=okQ(r);if(!a.length)return st.textContent='Aus dem Foto konnten keine Aufgaben erstellt werden. Versuche ein schärferes Bild.';
-  st.textContent='';scanQ=a.map(x=>({q:x.q,a:x.a}));runPool(a,f)}
- catch(e){st.textContent='Das hat nicht geklappt ('+(e.code||'Fehler')+').'}}
-
+};
 /* Eigene Formeln */
 function formeln(){const l=load('eigene',[]);
  $('#cl').innerHTML=l.length?l.map((c,k)=>`<div class="item"><div><div class="fx">${esc(c.f)}  →  ${esc(c.x)}</div><span class="meta">${esc(c.s)}${c.w.length<2?' (Karteikarte)':''}</span></div><button class="x" data-d="${k}" aria-label="Formel löschen">✕</button></div>`).join(''):'<p class="meta">Noch nichts gespeichert.</p>'}
