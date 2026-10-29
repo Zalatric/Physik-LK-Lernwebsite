@@ -158,15 +158,23 @@ ok('Finalisierung ohne hochgeladene Datei scheitert', !!r.error);
 r = await cA.from('cloud_files').select('id').eq('name', 'Geist.pdf');
 ok('Kein Datenbankeintrag ohne echte Datei entstanden', r.data.length === 0);
 
-// --- 12b. Umbenennen: ausschließlich der Eigentümer ---
+// --- 12b. Umbenennen: ausschließlich über die RPC-Funktion, nur der Eigentümer ---
 r = await cB.rpc('rename_cloud_file', { p_id: fileId, p_name: 'Gehackt.pdf' });
+ok('B kann fremde Datei nicht umbenennen (RPC abgewiesen)', !!r.error);
 r = await cA.from('cloud_files').select('name').eq('id', fileId).maybeSingle();
-ok('B kann fremde Datei nicht umbenennen (Name unverändert)', r.data && r.data.name === 'Testaufgabe.pdf');
+ok('Name nach fremdem Umbenennversuch unverändert', r.data && r.data.name === 'Testaufgabe.pdf');
+r = await cB.from('cloud_files').update({ name: 'Direkt.png' }).eq('id', fileId);
+ok('B kann nicht direkt in der Tabelle umbenennen', !!r.error);
+r = await cA.rpc('rename_cloud_file', { p_id: fileId, p_name: null });
+ok('Fehlender Name wird abgewiesen', !!r.error);
 r = await cA.rpc('rename_cloud_file', { p_id: fileId, p_name: 'Umbenannt.pdf' });
+ok('Eigentümer-RPC erfolgreich', !r.error);
 r = await cA.from('cloud_files').select('name').eq('id', fileId).maybeSingle();
 ok('A kann eigene Datei umbenennen', r.data && r.data.name === 'Umbenannt.pdf');
 r = await cA.rpc('rename_cloud_file', { p_id: fileId, p_name: '   ' });
 ok('Leerer Name wird abgewiesen', !!r.error);
+r = await cA.from('cloud_files').select('name').eq('id', fileId).maybeSingle();
+ok('Name nach leerem Umbenennversuch unverändert', r.data && r.data.name === 'Umbenannt.pdf');
 
 // --- 13. A löscht die eigene Datei ---
 r = await cA.from('cloud_files').delete({ count: 'exact' }).eq('id', fileId);

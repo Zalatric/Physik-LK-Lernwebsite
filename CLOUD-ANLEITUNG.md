@@ -3,8 +3,8 @@
 Die Cloud ist ein gemeinsamer Dateibereich im Tab „Cloud" der Lernwebsite.
 Jeder Angemeldete kann Dateien hochladen, ansehen und herunterladen –
 **löschen und umbenennen darf nur, wer die Datei selbst hochgeladen hat.**
-Diese Regeln werden von Supabase **serverseitig** durchgesetzt (Row Level
-Security), nicht nur im Browser.
+Diese Regeln werden von Supabase **serverseitig** durchgesetzt, nicht nur
+im Browser.
 
 ## Was wurde geändert
 
@@ -118,6 +118,9 @@ A benennt die eigene Datei um und löscht sie.
 - **Löschen** (Datenbankeintrag und Speicherobjekt) erlauben die
   Sicherheitsregeln nur für den Eigentümer – ein manipulierter API-Aufruf
   eines fremden Nutzers löscht schlicht 0 Zeilen bzw. wird abgewiesen.
+- **Umbenennen** läuft ausschließlich über die serverseitige Funktion
+  `rename_cloud_file`: Sie prüft explizit, dass der angemeldete Nutzer
+  Eigentümer der Datei ist, und validiert den Namen (1–200 Zeichen nach Trim).
 - **Einfügen** ist nur über die serverseitige Funktion möglich, die Pfad,
   Eigentümer-Ordner, Existenz und echte Größe der Datei prüft.
 - **Dateitypen und -größe** werden serverseitig geprüft (Bucket-Konfiguration,
