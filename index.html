@@ -55,7 +55,21 @@ section{padding-bottom:90px!important}
 .pre{white-space:pre-wrap}
 #tm{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:10px;z-index:10;margin:0;padding:7px 12px;font-weight:600}
 .row .btn.big{flex:1 1 220px;padding:36px 20px;font-size:1.7rem;border-radius:8px}
-</style></head><body>
+/* Datei-Cloud */
+.pbar{height:10px;background:var(--grid);border-radius:5px;overflow:hidden;margin:10px 0 4px}
+.pbar>div{height:100%;background:var(--acc);width:0;transition:width .2s}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:var(--grid);color:var(--mut);border:1px solid var(--line);vertical-align:1px}
+#cloud .item.own{background:color-mix(in srgb,var(--ok) 8%,transparent);border-radius:6px;padding-left:8px;padding-right:8px}
+#cloud .item>div:last-child{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal>div{background:var(--card);border:1px solid var(--line);border-radius:6px;max-width:min(880px,100%);max-height:90vh;display:flex;flex-direction:column;width:100%}
+#cmimg,#cmframe{width:100%;height:64vh;border:0;background:#fff;display:block}
+#ctoast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:6px;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw}
+#ctoast.on{opacity:1}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-config.js"></script>
+</head><body>
 <button class="chip" id="tm" type="button" aria-label="Hell/Dunkel umschalten">◐ Dunkel</button>
 <div id="gate"><div class="card"><h1>Lern_forum</h1>
 <form id="gf"><label for="gp">Passwort</label><input id="gp" type="password" autocomplete="current-password" autofocus>
@@ -134,10 +148,54 @@ section{padding-bottom:90px!important}
 </section>
 <section id="cloud">
  <h2>Cloud</h2>
- <p class="meta">Gemeinsame Dateien für alle. Jeder kann hochladen und ansehen, löschen darfst du nur deine eigenen.</p>
- <p id="cst" class="meta">Verbinde …</p>
- <div id="cup" hidden><div class="row"><div><label for="cf2">Fach</label><select id="cf2"><option>Mathe</option><option>Physik</option><option>Sonstiges</option></select></div><div><label for="cfi">Dateien wählen (max. 20 MB)</label><input type="file" id="cfi" multiple></div></div></div>
- <div id="cll"></div>
+ <p class="meta">Gemeinsame Dateien für den Kurs. Hochladen und Ansehen darf jeder Angemeldete, löschen nur die eigenen Dateien.</p>
+
+ <div class="card" id="cgate" hidden>
+  <h3 id="ctitle">Anmelden</h3>
+  <form id="cform">
+   <label for="cmail">E-Mail</label><input id="cmail" type="email" autocomplete="email" required>
+   <label for="cpw">Passwort</label><input id="cpw" type="password" autocomplete="current-password" required>
+   <p id="cmsg" class="meta" role="alert"></p>
+   <div class="row"><button class="btn" id="csubmit" type="submit">Anmelden</button><button class="chip" id="ctoggle" type="button">Neues Konto anlegen</button></div>
+  </form>
+ </div>
+
+ <div id="cui" hidden>
+  <div class="card" id="cprofile" hidden>
+   <h3>Wie sollen dich andere sehen?</h3>
+   <div class="row"><div><label for="cname">Anzeigename</label><input id="cname" maxlength="40" placeholder="z. B. David"></div><button class="btn" id="cpsave" type="button">Speichern</button></div>
+  </div>
+
+  <div class="card">
+   <h3>Datei hochladen</h3>
+   <div class="row">
+    <div><label for="cfach">Fach</label><select id="cfach"><option>Mathe</option><option>Physik</option><option>Sonstiges</option></select></div>
+    <div><label for="ckat">Kategorie</label><select id="ckat"><option>Unterrichtsmaterial</option><option>Zusammenfassung</option><option>Aufgaben</option><option>Lösungen</option><option>Klausurvorbereitung</option></select></div>
+    <div><label for="cfi">Dateien wählen (max. 30 MB je Datei)</label><input type="file" id="cfi" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.pptx,.xlsx,.zip"></div>
+   </div>
+   <div id="cprog" hidden><div class="pbar"><div id="cprogbar"></div></div><p class="meta" id="cprogtxt"></p></div>
+  </div>
+
+  <div class="tbar">
+   <input id="csuch" placeholder="Dateien durchsuchen …" style="flex:1 1 180px;margin:0" aria-label="Dateien durchsuchen">
+   <select id="cfilter" aria-label="Nach Dateityp filtern"><option value="">Alle Typen</option><option value="PDF">PDF</option><option value="Bild">Bilder</option><option value="DOC">Word</option><option value="PPT">PowerPoint</option><option value="XLS">Excel</option><option value="ZIP">ZIP</option></select>
+   <select id="csort" aria-label="Sortierung"><option value="neu">Neueste zuerst</option><option value="alt">Älteste zuerst</option><option value="az">Name A–Z</option><option value="za">Name Z–A</option><option value="gro">Größe absteigend</option><option value="kle">Größe aufsteigend</option><option value="typ">Nach Typ</option></select>
+   <button class="chip" id="clogout" type="button">Abmelden</button>
+  </div>
+
+  <div id="cll"></div>
+  <p class="meta" id="cst"></p>
+ </div>
+
+ <div id="cmodal" class="modal" hidden role="dialog" aria-modal="true" aria-label="Dateivorschau">
+  <div><div class="tbar" style="margin:0;padding:10px 14px;border-bottom:1px solid var(--line)"><b id="cmtitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></b><button class="chip" id="cmclose" type="button">Schließen</button></div><img id="cmimg" alt="Vorschau"><iframe id="cmframe" title="Vorschau"></iframe></div>
+ </div>
+
+ <div id="cdel" class="modal" hidden role="dialog" aria-modal="true" aria-label="Datei löschen">
+  <div style="max-width:440px;padding:20px"><h3>Datei löschen?</h3><p>„<b id="cdelfile"></b>“ wird dauerhaft aus der Cloud entfernt.</p><div class="row"><button class="btn" id="cdelok" type="button" style="background:var(--bad);border-color:var(--bad)">Löschen</button><button class="chip" id="cdelno" type="button">Abbrechen</button></div></div>
+ </div>
+
+ <div id="ctoast" role="status" aria-live="polite"></div>
 </section>
 </main>
 <div id="ft">Made by Martin Oelers, Lasse Welters, David Herdt, Jonathan Funck</div>
@@ -371,30 +429,141 @@ $('#gf').onsubmit=async e=>{e.preventDefault();
  if(await sha($('#gp').value)===PW_HASH){try{sessionStorage.setItem('auth','1')}catch(x){}document.body.classList.add('in')}
  else{$('#gerr').textContent='Falsches Passwort.';$('#gp').select()}};
 
-/* Cloud (db + assets, nur in veröffentlichter Seite) */
-let cdb=null,cas=null,cme='',cnames={};
+/* Cloud (Supabase: Anmeldung + Datenbank + Speicher) */
+let sb=null,cuid='',cemail='',cfiles=[],cnames={},cch=false,cdelF=null,creg=false;
+const CMAX=31457280;
+const CMIME={'application/pdf':'PDF','image/png':'Bild','image/jpeg':'Bild','image/webp':'Bild','image/gif':'Bild','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOC','application/vnd.openxmlformats-officedocument.presentationml.presentation':'PPT','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'XLS','application/zip':'ZIP'};
+const CEXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',zip:'application/zip'};
 const kb=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const ctoast=t=>{const e=$('#ctoast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),3500)};
+
 async function cloudInit(){
- if(!window.claude){$('#cst').textContent='Die Cloud ist nur in der veröffentlichten Version verfügbar.';return}
- try{cdb=await claude.use('db');cas=await claude.use('assets');const u=await claude.use('user');if(u){cme=await u.id();window.cu=u}}catch(e){}
- if(!cdb){$('#cst').textContent='Bitte bei Claude anmelden, um die Cloud zu nutzen.';return}
- $('#cst').textContent=cas?'':'Du darfst Dateien ansehen, aber nicht hochladen (nur Lese-Rechte).';
- $('#cup').hidden=!cas;
- cdb.collection('cloud').orderBy('ts','desc').onSnapshot(async sn=>{
-  const l=sn.docs.map(d=>({id:d.id,...d.data()}));
-  try{if(window.cu){const ids=[...new Set(l.map(x=>x.by).filter(Boolean))];const pr=await window.cu.profiles(ids);ids.forEach(i=>cnames[i]=(pr[i]&&pr[i].name)||'')}}catch(e){}
-  cloudList(l)},e=>{$('#cst').textContent='Cloud nicht erreichbar ('+(e.code||'Fehler')+').'})}
-function cloudList(l){
- $('#cll').innerHTML=l.length?l.map(f=>`<div class="item"><div><b>${esc(f.name)}</b><br><span class="meta">${esc(f.fach)} · ${kb(f.size||0)} · ${esc(cnames[f.by]||'Unbekannt')}${f.by===cme?' (du)':''} · ${new Date(f.ts).toLocaleDateString('de-DE')}</span></div><div><a class="chip" style="text-decoration:none;color:inherit;display:inline-block" target="_blank" rel="noopener" href="/_blob/${esc(f.asset)}" download="${esc(f.name)}">Öffnen</a>${f.by===cme&&cas?`<button class="x" data-r="${esc(f.id)}" data-a="${esc(f.asset)}" aria-label="Datei löschen">✕</button>`:''}</div></div>`).join(''):'<p class="meta">Noch keine Dateien in der Cloud.</p>'}
-$('#cfi').onchange=async e=>{if(!cas||!cdb)return;const st=$('#cst');
+ if(!window.SUPABASE_CONFIG||!window.SUPABASE_CONFIG.url){$('#cst').textContent='Cloud noch nicht eingerichtet – siehe CLOUD-ANLEITUNG.md.';return}
+ if(!window.supabase||!supabase.createClient){$('#cst').textContent='Cloud-Bibliothek konnte nicht geladen werden.';return}
+ try{sb=supabase.createClient(SUPABASE_CONFIG.url,SUPABASE_CONFIG.anonKey)}catch(e){$('#cst').textContent='Cloud-Konfiguration ist ungültig.';return}
+ const{data:{session}}=await sb.auth.getSession();
+ cloudAuth(session);
+ sb.auth.onAuthStateChange((_ev,s)=>cloudAuth(s));
+}
+function cloudAuth(s){
+ cuid=s&&s.user?s.user.id:'';cemail=s&&s.user?s.user.email||'':'';
+ $('#cgate').hidden=!!cuid;$('#cui').hidden=!cuid;
+ if(!cuid){$('#cst').textContent='Melde dich an, um die gemeinsame Cloud zu nutzen.';return}
+ if(!cch){cch=true;
+  sb.channel('cloud-files').on('postgres_changes',{event:'*',schema:'public',table:'cloud_files'},()=>cloudLoad()).subscribe();
+  sb.channel('cloud-profiles').on('postgres_changes',{event:'*',schema:'public',table:'profiles'},()=>cloudNames()).subscribe();}
+ cloudLoad();cloudNames();
+}
+async function cloudLoad(){
+ if(!cuid)return;
+ const{data,error}=await sb.from('cloud_files').select('*').order('created_at',{ascending:false});
+ if(error){$('#cst').textContent='Cloud nicht erreichbar ('+(error.code||error.message)+').';return}
+ cfiles=data||[];cloudRender();
+}
+async function cloudNames(){
+ if(!cuid)return;
+ const{data,error}=await sb.from('profiles').select('user_id,display_name');
+ if(error)return;
+ cnames={};(data||[]).forEach(p=>cnames[p.user_id]=p.display_name);
+ $('#cprofile').hidden=!!cnames[cuid];
+ if(!cnames[cuid]&&!$('#cname').value)$('#cname').value=cemail.split('@')[0]||'';
+ cloudRender();
+}
+function cloudRender(){
+ const q=($('#csuch').value||'').toLowerCase(),ty=$('#cfilter').value,s=$('#csort').value;
+ const l=cfiles.filter(f=>(!q||f.name.toLowerCase().includes(q))&&(!ty||CMIME[f.mime]===ty))
+  .sort((a,b)=>s==='az'?a.name.localeCompare(b.name,'de'):s==='za'?b.name.localeCompare(a.name,'de'):s==='gro'?b.size-a.size:s==='kle'?a.size-b.size:s==='alt'?new Date(a.created_at)-new Date(b.created_at):s==='typ'?(CMIME[b.mime]||'').localeCompare(CMIME[a.mime]||'')||new Date(b.created_at)-new Date(a.created_at):new Date(b.created_at)-new Date(a.created_at));
+ $('#cll').innerHTML=l.length?l.map(f=>`<div class="item${f.owner===cuid?' own':''}"><div><b>${esc(f.name)}</b> <span class="badge">${CMIME[f.mime]||'?'}</span><br><span class="meta">${esc(f.fach)} · ${esc(f.category)} · ${kb(f.size)} · von ${esc(cnames[f.owner]||'Unbekannt')}${f.owner===cuid?' (du)':''} · ${new Date(f.created_at).toLocaleDateString('de-DE')}</span></div><div>${f.mime==='application/pdf'||/^image\//.test(f.mime)?`<button class="chip" data-p="${esc(f.id)}" type="button">Ansehen</button>`:''}<button class="chip" data-dl="${esc(f.id)}" type="button">Herunterladen</button>${f.owner===cuid?`<button class="x" data-r="${esc(f.id)}" type="button" aria-label="Datei löschen">✕</button>`:''}</div></div>`).join(''):'<p class="meta">Noch keine Dateien gefunden. Lade als Erste eine hoch.</p>';
+}
+/* Vorschau und Download über private, zeitlich begrenzte Links */
+async function cloudPreview(f){
+ const{data,error}=await sb.storage.from('cloud').createSignedUrl(f.path,3600);
+ if(error)return ctoast('Vorschau nicht verfügbar.');
+ const isImg=/^image\//.test(f.mime);
+ $('#cmtitle').textContent=f.name;
+ $('#cmimg').hidden=!isImg;$('#cmframe').hidden=isImg;
+ if(isImg)$('#cmimg').src=data.signedUrl;else $('#cmframe').src=data.signedUrl;
+ $('#cmodal').hidden=false;$('#cmclose').focus();
+}
+async function cloudDownload(f){
+ const{data,error}=await sb.storage.from('cloud').createSignedUrl(f.path,3600,{download:f.name});
+ if(error)return ctoast('Download nicht verfügbar.');
+ const a=document.createElement('a');a.href=data.signedUrl;a.rel='noopener';a.click();
+}
+/* Upload: erst Speicherobjekt, dann serverseitige Finalisierung.
+   Die Funktion finalize_cloud_upload() prüft serverseitig Pfad, Objekt und echte Größe. */
+function cloudXhr(path,file,mime,onp){return new Promise(async(res,rej)=>{
+ const{data:{session}}=await sb.auth.getSession();
+ if(!session)return rej(new Error('Nicht angemeldet.'));
+ const x=new XMLHttpRequest();
+ x.open('POST',SUPABASE_CONFIG.url+'/storage/v1/object/cloud/'+path.split('/').map(encodeURIComponent).join('/'));
+ x.setRequestHeader('Authorization','Bearer '+session.access_token);
+ x.setRequestHeader('Content-Type',mime);
+ x.upload.onprogress=ev=>{if(ev.lengthComputable)onp(ev.loaded/ev.total)};
+ x.onload=()=>{if(x.status<300)return res();let m='';try{m=JSON.parse(x.responseText).message}catch(e){}rej(new Error(m||('HTTP '+x.status)))};
+ x.onerror=()=>rej(new Error('Netzwerkfehler beim Upload.'));
+ x.send(file)})}
+async function cloudUploadFile(f){
+ const ext=(f.name.split('.').pop()||'').toLowerCase();
+ if(!CEXT[ext])throw{fatal:1,msg:f.name+': Dieser Dateityp ist nicht erlaubt (PDF, Bilder, Office, ZIP).'};
+ if(f.size>CMAX)throw{fatal:1,msg:f.name+' ist größer als 30 MB.'};
+ const mime=CEXT[ext];
+ const path=cuid+'/'+((crypto.randomUUID&&crypto.randomUUID())||Date.now()+'-'+Math.random().toString(36).slice(2))+'.'+ext;
+ try{await cloudXhr(path,f,mime,p=>{$('#cprogbar').style.width=Math.round(p*100)+'%';$('#cprogtxt').textContent='Lade hoch: '+f.name+' ('+Math.round(p*100)+' %)'})}
+ catch(x){if(!/already exists/i.test(x&&x.message))throw{msg:'Upload fehlgeschlagen ('+((x&&x.message)||'Fehler')+').'}}
+ let fin;try{fin=await sb.rpc('finalize_cloud_upload',{p_name:f.name.slice(0,200),p_fach:$('#cfach').value,p_category:$('#ckat').value,p_mime:mime,p_path:path})}catch(e){fin={error:e}}
+ if(fin.error){
+  const{data:chk}=await sb.from('cloud_files').select('id').eq('path',path).maybeSingle();
+  if(chk)return; /* Eintrag existiert doch – Antwort war nur verloren gegangen */
+  try{await sb.storage.from('cloud').remove([path])}catch(e2){}
+  throw{msg:'Upload fehlgeschlagen ('+((fin.error&&fin.error.message)||'Fehler')+').'};
+ }
+}
+$('#cfi').onchange=async e=>{
+ if(!cuid)return;
+ $('#cprog').hidden=false;
  for(const f of e.target.files){
-  if(f.size>20971520){st.textContent=f.name+' ist größer als 20 MB.';continue}
-  st.textContent='Lade hoch: '+f.name+' …';
-  try{const r=await cas.upload(f);
-   await cdb.collection('cloud').add({name:f.name,fach:$('#cf2').value,size:f.size,asset:r.id,by:cme,ts:Date.now()});st.textContent=''}
-  catch(x){st.textContent=x.code==='unsupported_type'?f.name+': Dieser Dateityp wird nicht unterstützt (erlaubt: Bilder, PDF, Video, Text/CSV/JSON).':'Upload fehlgeschlagen ('+(x.code||'Fehler')+').'}}
- e.target.value=''};
-$('#cll').onclick=async e=>{const b=e.target.closest('[data-r]');if(!b||!confirm('Datei aus der Cloud löschen?'))return;
- try{await cdb.collection('cloud').doc(b.dataset.r).delete();await cas.delete(b.dataset.a)}catch(x){$('#cst').textContent='Löschen fehlgeschlagen.'}};
+  try{await cloudUploadFile(f);ctoast(f.name+' wurde hochgeladen.')}
+  catch(x){ctoast((x&&x.msg)||'Upload fehlgeschlagen.')}
+  $('#cprogbar').style.width='0';
+ }
+ $('#cprog').hidden=true;$('#cprogtxt').textContent='';e.target.value='';
+};
+/* Anmeldung / Registrierung / Profil / Abmelden */
+$('#ctoggle').onclick=()=>{creg=!creg;$('#ctitle').textContent=creg?'Neues Konto':'Anmelden';$('#csubmit').textContent=creg?'Konto anlegen':'Anmelden';$('#cpw').autocomplete=creg?'new-password':'current-password';$('#cmsg').textContent=''};
+$('#cform').onsubmit=async e=>{e.preventDefault();
+ if(!sb)return $('#cmsg').textContent='Cloud ist nicht eingerichtet.';
+ const email=$('#cmail').value.trim(),pw=$('#cpw').value;
+ if(!email||pw.length<6){$('#cmsg').textContent='Bitte E-Mail und ein Passwort mit mindestens 6 Zeichen.';return}
+ $('#cmsg').textContent='';
+ const r=creg?await sb.auth.signUp({email,password:pw}):await sb.auth.signInWithPassword({email,password:pw});
+ if(r.error){$('#cmsg').textContent=r.error.message;return}
+ if(!r.data.session){$('#cmsg').textContent='Konto angelegt. Bitte bestätige die E-Mail und melde dich dann an.';return}
+ $('#cmail').value='';$('#cpw').value=''};
+$('#cpsave').onclick=async()=>{
+ const n=$('#cname').value.trim().slice(0,40);if(!n)return;
+ const{error}=await sb.from('profiles').insert({user_id:cuid,display_name:n});
+ if(error)return ctoast('Name konnte nicht gespeichert werden.');
+ ctoast('Name gespeichert.');cloudNames()};
+$('#clogout').onclick=async()=>{await sb.auth.signOut()};
+/* Listenaktionen und Dialoge */
+$('#cll').onclick=e=>{
+ const p=e.target.closest('[data-p]'),d=e.target.closest('[data-dl]'),r=e.target.closest('[data-r]');
+ if(p){const f=cfiles.find(x=>x.id===p.dataset.p);if(f)cloudPreview(f)}
+ if(d){const f=cfiles.find(x=>x.id===d.dataset.dl);if(f)cloudDownload(f)}
+ if(r){const f=cfiles.find(x=>x.id===r.dataset.r);if(f){cdelF=f;$('#cdelfile').textContent=f.name;$('#cdel').hidden=false;$('#cdelno').focus()}}};
+$('#cmclose').onclick=()=>{$('#cmodal').hidden=true;$('#cmimg').src='';$('#cmframe').src=''};
+$('#cdelno').onclick=()=>$('#cdel').hidden=true;
+$('#cdelok').onclick=async()=>{
+ const f=cdelF;if(!f)return;
+ $('#cdelok').disabled=true;
+ const{error}=await sb.from('cloud_files').delete().eq('id',f.id);
+ if(error){$('#cdel').hidden=true;$('#cdelok').disabled=false;cdelF=null;return ctoast('Löschen fehlgeschlagen ('+(error.code||error.message)+').')}
+ let sErr=null;try{const r=await sb.storage.from('cloud').remove([f.path]);if(r.error)sErr=r.error}catch(e){sErr=e}
+ $('#cdel').hidden=true;$('#cdelok').disabled=false;cdelF=null;
+ ctoast(sErr?'Datei aus der Liste entfernt, Speicherbereinigung fehlgeschlagen.':'Datei gelöscht.');
+ cloudLoad()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#cmodal').hidden=true;$('#cmimg').src='';$('#cmframe').src='';$('#cdel').hidden=true}});
+$('#csuch').oninput=cloudRender;$('#cfilter').onchange=cloudRender;$('#csort').onchange=cloudRender;
 cloudInit();
 </script></body></html>

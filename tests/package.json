@@ -1,0 +1,8 @@
+{
+  "name": "physik-lk-cloud-tests",
+  "private": true,
+  "type": "module",
+  "description": "Sicherheits- und Funktionstests für die Datei-Cloud (Supabase)",
+  "scripts": { "test": "node cloud.test.mjs" },
+  "dependencies": { "@supabase/supabase-js": "^2" }
+}
