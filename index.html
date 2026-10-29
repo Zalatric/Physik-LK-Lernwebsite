@@ -165,7 +165,7 @@ section{padding-bottom:90px!important}
  <div id="cui" hidden>
   <div class="card" id="cprofile" hidden>
    <h3>Wie sollen dich andere sehen?</h3>
-   <div class="row"><div><label for="cname">Anzeigename</label><input id="cname" maxlength="40" placeholder="z. B. David"></div><button class="btn" id="cpsave" type="button">Speichern</button></div>
+   <div class="row"><div><label for="cname">Anzeigename</label><input id="cname" maxlength="40" placeholder="Dein Name"></div><button class="btn" id="cpsave" type="button">Speichern</button></div>
   </div>
 
   <div class="card">
@@ -180,6 +180,7 @@ section{padding-bottom:90px!important}
 
   <div class="tbar">
    <input id="csuch" placeholder="Dateien durchsuchen …" style="flex:1 1 180px;margin:0" aria-label="Dateien durchsuchen">
+   <select id="ckatfilter" aria-label="Nach Kategorie filtern"><option value="">Alle Kategorien</option><option>Unterrichtsmaterial</option><option>Zusammenfassung</option><option>Aufgaben</option><option>Lösungen</option><option>Klausurvorbereitung</option></select>
    <select id="cfilter" aria-label="Nach Dateityp filtern"><option value="">Alle Typen</option><option value="PDF">PDF</option><option value="Bild">Bilder</option><option value="DOC">Word</option><option value="PPT">PowerPoint</option><option value="XLS">Excel</option><option value="ZIP">ZIP</option></select>
    <select id="csort" aria-label="Sortierung"><option value="neu">Neueste zuerst</option><option value="alt">Älteste zuerst</option><option value="az">Name A–Z</option><option value="za">Name Z–A</option><option value="gro">Größe absteigend</option><option value="kle">Größe aufsteigend</option><option value="typ">Nach Typ</option></select>
    <button class="chip" id="clogout" type="button">Abmelden</button>
@@ -194,6 +195,10 @@ section{padding-bottom:90px!important}
 
  <div id="cdel" class="modal" hidden role="dialog" aria-modal="true" aria-label="Datei löschen">
   <div style="max-width:440px;padding:20px"><h3>Datei löschen?</h3><p>„<b id="cdelfile"></b>“ wird dauerhaft aus der Cloud entfernt.</p><div class="row"><button class="btn" id="cdelok" type="button" style="background:var(--bad);border-color:var(--bad)">Löschen</button><button class="chip" id="cdelno" type="button" style="flex:0 0 auto">Abbrechen</button></div></div>
+ </div>
+
+ <div id="cren" class="modal" hidden role="dialog" aria-modal="true" aria-label="Datei umbenennen">
+  <div style="max-width:440px;padding:20px"><h3>Datei umbenennen</h3><label for="crenname">Neuer Name</label><input id="crenname" maxlength="200"><div class="row" style="margin-top:14px"><button class="btn" id="crenok" type="button">Speichern</button><button class="chip" id="crenno" type="button" style="flex:0 0 auto">Abbrechen</button></div></div>
  </div>
 
  <div id="ctoast" role="status" aria-live="polite"></div>
@@ -431,7 +436,7 @@ $('#gf').onsubmit=async e=>{e.preventDefault();
  else{$('#gerr').textContent='Falsches Passwort.';$('#gp').select()}};
 
 /* Cloud (Supabase: Anmeldung + Datenbank + Speicher) */
-let sb=null,cuid='',cemail='',cfiles=[],cnames={},cch=false,cdelF=null,creg=false;
+let sb=null,cuid='',cemail='',cfiles=[],cnames={},cch=false,cdelF=null,crenF=null,creg=false;
 const CMAX=31457280;
 const CMIME={'application/pdf':'PDF','image/png':'Bild','image/jpeg':'Bild','image/webp':'Bild','image/gif':'Bild','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOC','application/vnd.openxmlformats-officedocument.presentationml.presentation':'PPT','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'XLS','application/zip':'ZIP'};
 const CEXT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',zip:'application/zip'};
@@ -467,14 +472,13 @@ async function cloudNames(){
  if(error)return;
  cnames={};(data||[]).forEach(p=>cnames[p.user_id]=p.display_name);
  $('#cprofile').hidden=!!cnames[cuid];
- if(!cnames[cuid]&&!$('#cname').value)$('#cname').value=cemail.split('@')[0]||'';
  cloudRender();
 }
 function cloudRender(){
- const q=($('#csuch').value||'').toLowerCase(),ty=$('#cfilter').value,s=$('#csort').value;
- const l=cfiles.filter(f=>(!q||f.name.toLowerCase().includes(q))&&(!ty||CMIME[f.mime]===ty))
+ const q=($('#csuch').value||'').toLowerCase(),ty=$('#cfilter').value,kt=$('#ckatfilter').value,s=$('#csort').value;
+ const l=cfiles.filter(f=>(!q||f.name.toLowerCase().includes(q))&&(!ty||CMIME[f.mime]===ty)&&(!kt||f.category===kt))
   .sort((a,b)=>s==='az'?a.name.localeCompare(b.name,'de'):s==='za'?b.name.localeCompare(a.name,'de'):s==='gro'?b.size-a.size:s==='kle'?a.size-b.size:s==='alt'?new Date(a.created_at)-new Date(b.created_at):s==='typ'?(CMIME[b.mime]||'').localeCompare(CMIME[a.mime]||'')||new Date(b.created_at)-new Date(a.created_at):new Date(b.created_at)-new Date(a.created_at));
- $('#cll').innerHTML=l.length?l.map(f=>`<div class="item${f.owner===cuid?' own':''}"><div><b>${esc(f.name)}</b> <span class="badge">${CMIME[f.mime]||'?'}</span><br><span class="meta">${esc(f.fach)} · ${esc(f.category)} · ${kb(f.size)} · von ${esc(cnames[f.owner]||'Unbekannt')}${f.owner===cuid?' (du)':''} · ${new Date(f.created_at).toLocaleDateString('de-DE')}</span></div><div>${f.mime==='application/pdf'||/^image\//.test(f.mime)?`<button class="chip" data-p="${esc(f.id)}" type="button">Ansehen</button>`:''}<button class="chip" data-dl="${esc(f.id)}" type="button">Herunterladen</button>${f.owner===cuid?`<button class="x" data-r="${esc(f.id)}" type="button" aria-label="Datei löschen">✕</button>`:''}</div></div>`).join(''):'<p class="meta">Noch keine Dateien gefunden. Lade als Erste eine hoch.</p>';
+ $('#cll').innerHTML=l.length?l.map(f=>`<div class="item${f.owner===cuid?' own':''}"><div><b>${esc(f.name)}</b> <span class="badge">${CMIME[f.mime]||'?'}</span><br><span class="meta">${esc(f.fach)} · ${esc(f.category)} · ${kb(f.size)} · von ${esc(cnames[f.owner]||'Unbekannt')}${f.owner===cuid?' (du)':''} · ${new Date(f.created_at).toLocaleDateString('de-DE')}</span></div><div>${f.mime==='application/pdf'||/^image\//.test(f.mime)?`<button class="chip" data-p="${esc(f.id)}" type="button">Ansehen</button>`:''}<button class="chip" data-dl="${esc(f.id)}" type="button">Herunterladen</button>${f.owner===cuid?`<button class="chip" data-rn="${esc(f.id)}" type="button">Umbenennen</button><button class="x" data-r="${esc(f.id)}" type="button" aria-label="Datei löschen">✕</button>`:''}</div></div>`).join(''):'<p class="meta">Noch keine Dateien gefunden. Lade als Erste eine hoch.</p>';
 }
 /* Vorschau und Download über private, zeitlich begrenzte Links */
 async function cloudPreview(f){
@@ -561,12 +565,22 @@ $('#cpsave').onclick=async()=>{
 $('#clogout').onclick=async()=>{await sb.auth.signOut()};
 /* Listenaktionen und Dialoge */
 $('#cll').onclick=e=>{
- const p=e.target.closest('[data-p]'),d=e.target.closest('[data-dl]'),r=e.target.closest('[data-r]');
+ const p=e.target.closest('[data-p]'),d=e.target.closest('[data-dl]'),r=e.target.closest('[data-r]'),rn=e.target.closest('[data-rn]');
  if(p){const f=cfiles.find(x=>x.id===p.dataset.p);if(f)cloudPreview(f)}
  if(d){const f=cfiles.find(x=>x.id===d.dataset.dl);if(f)cloudDownload(f)}
- if(r){const f=cfiles.find(x=>x.id===r.dataset.r);if(f){cdelF=f;$('#cdelfile').textContent=f.name;$('#cdel').hidden=false;$('#cdelno').focus()}}};
+ if(r){const f=cfiles.find(x=>x.id===r.dataset.r);if(f){cdelF=f;$('#cdelfile').textContent=f.name;$('#cdel').hidden=false;$('#cdelno').focus()}}
+ if(rn){const f=cfiles.find(x=>x.id===rn.dataset.rn);if(f){crenF=f;$('#crenname').value=f.name;$('#cren').hidden=false;$('#crenname').focus()}}};
 $('#cmclose').onclick=()=>{$('#cmodal').hidden=true;$('#cmimg').src='';$('#cmframe').src=''};
 $('#cdelno').onclick=()=>$('#cdel').hidden=true;
+$('#crenno').onclick=()=>{$('#cren').hidden=true;crenF=null};
+$('#crenok').onclick=async()=>{
+ const f=crenF;if(!f)return;
+ const n=$('#crenname').value.trim().slice(0,200);if(!n)return;
+ $('#crenok').disabled=true;
+ const{error}=await sb.rpc('rename_cloud_file',{p_id:f.id,p_name:n});
+ $('#crenok').disabled=false;
+ if(error)return ctoast('Umbenennen fehlgeschlagen ('+(error.code||error.message)+').');
+ $('#cren').hidden=true;crenF=null;ctoast('Datei umbenannt.');cloudLoad()};
 $('#cdelok').onclick=async()=>{
  const f=cdelF;if(!f)return;
  $('#cdelok').disabled=true;
@@ -576,7 +590,7 @@ $('#cdelok').onclick=async()=>{
  $('#cdel').hidden=true;$('#cdelok').disabled=false;cdelF=null;
  ctoast(sErr?'Datei aus der Liste entfernt, Speicherbereinigung fehlgeschlagen.':'Datei gelöscht.');
  cloudLoad()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#cmodal').hidden=true;$('#cmimg').src='';$('#cmframe').src='';$('#cdel').hidden=true}});
-$('#csuch').oninput=cloudRender;$('#cfilter').onchange=cloudRender;$('#csort').onchange=cloudRender;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#cmodal').hidden=true;$('#cmimg').src='';$('#cmframe').src='';$('#cdel').hidden=true;$('#cren').hidden=true}});
+$('#csuch').oninput=cloudRender;$('#cfilter').onchange=cloudRender;$('#ckatfilter').onchange=cloudRender;$('#csort').onchange=cloudRender;
 cloudInit();
 </script></body></html>

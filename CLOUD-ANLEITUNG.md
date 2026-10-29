@@ -2,9 +2,9 @@
 
 Die Cloud ist ein gemeinsamer Dateibereich im Tab „Cloud" der Lernwebsite.
 Jeder Angemeldete kann Dateien hochladen, ansehen und herunterladen –
-**löschen darf nur, wer die Datei selbst hochgeladen hat.** Diese Regel wird
-von Supabase **serverseitig** durchgesetzt (Row Level Security), nicht nur
-im Browser.
+**löschen und umbenennen darf nur, wer die Datei selbst hochgeladen hat.**
+Diese Regeln werden von Supabase **serverseitig** durchgesetzt (Row Level
+Security), nicht nur im Browser.
 
 ## Was wurde geändert
 
@@ -59,6 +59,10 @@ Im Dashboard: **SQL Editor** → Inhalt von `supabase/schema.sql` einfügen → 
 Das Skript ist wiederholbar; es werden vorhandene Regeln ersetzt und fehlende
 Objekte ergänzt. Trotzdem vorher schauen, was drinsteht.
 
+**Update-Hinweis**: Nach Änderungen an dieser Datei (z. B. kam die
+Umbenennen-Funktion `rename_cloud_file` später hinzu) einfach den kompletten
+Inhalt erneut ausführen – bestehende Dateien und Konten bleiben erhalten.
+
 ### 3. Anmeldung konfigurieren
 
 Im Dashboard: **Authentication → Sign Up / Providers**:
@@ -99,12 +103,13 @@ npm test
 
 Voraussetzung: „Confirm email" ist deaktiviert (siehe Schritt 3).
 Getestet werden u. a.: B sieht und lädt die Datei von A herunter, B kann
-sie weder über die Datenbank noch über den Speicher löschen, B kann keine
-Einträge unter fremdem Namen anlegen und die Finalisierung nicht für
-fremde Pfade aufrufen, Überschreibversuche werden abgewiesen, unfinalisierte
-Uploads sind für B nicht abrufbar, Unangemeldete erhalten nichts, 31-MB- und
-`.exe`-Uploads werden abgewiesen, Uploads ohne echte Datei hinterlassen
-keinen Eintrag, die Finalisierung ist wiederholbar, A löscht die eigene Datei.
+sie weder über die Datenbank noch über den Speicher löschen oder
+umbenennen, B kann keine Einträge unter fremdem Namen anlegen und die
+Finalisierung nicht für fremde Pfade aufrufen, Überschreibversuche werden
+abgewiesen, unfinalisierte Uploads sind für B nicht abrufbar, Unangemeldete
+erhalten nichts, 31-MB- und `.exe`-Uploads werden abgewiesen, Uploads ohne
+echte Datei hinterlassen keinen Eintrag, die Finalisierung ist wiederholbar,
+A benennt die eigene Datei um und löscht sie.
 
 ## Sicherheit – wie das Eigentümerprinzip durchgesetzt wird
 

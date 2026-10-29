@@ -121,6 +121,34 @@ $$;
 revoke all on function public.finalize_cloud_upload from public;
 grant execute on function public.finalize_cloud_upload to authenticated;
 
+-- 4b) Umbenennen: ausschließlich der Eigentümer, ausschließlich der Name.
+--     Direkte UPDATE-Rechte auf der Tabelle gibt es bewusst keine.
+create or replace function public.rename_cloud_file(p_id uuid, p_name text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Nicht angemeldet.';
+  end if;
+  p_name := btrim(p_name);
+  if char_length(p_name) between 1 and 200 then
+    update public.cloud_files set name = p_name
+      where id = p_id and owner = auth.uid();
+    if not found then
+      raise exception 'Datei nicht gefunden oder keine Berechtigung.';
+    end if;
+  else
+    raise exception 'Ungültiger Name.';
+  end if;
+end;
+$$;
+
+revoke all on function public.rename_cloud_file from public;
+grant execute on function public.rename_cloud_file to authenticated;
+
 -- 5) Live-Aktualisierung der Dateiliste (Realtime)
 do $$ begin
   alter publication supabase_realtime add table public.cloud_files;
