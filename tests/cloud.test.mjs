@@ -19,6 +19,7 @@
 //   fehlgeschlagene Uploads hinterlassen keine Einträge.
 
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 const URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_ANON_KEY;
@@ -27,13 +28,15 @@ if (!URL || !KEY) {
   process.exit(1);
 }
 
+const mk = () => createClient(URL, KEY, { realtime: { transport: ws } });
+
 let pass = 0, fail = 0;
 const ok = (name, cond) => { cond ? pass++ : fail++; console.log((cond ? '  ✓ ' : '  ✗ ') + name); };
 const rnd = () => Math.random().toString(36).slice(2, 10);
 
-const cA = createClient(URL, KEY);      // Nutzer A (Eigentümer)
-const cB = createClient(URL, KEY);      // Nutzer B (Angreifender)
-const cAnon = createClient(URL, KEY);   // nicht angemeldet
+const cA = mk();      // Nutzer A (Eigentümer)
+const cB = mk();      // Nutzer B (Angreifender)
+const cAnon = mk();   // nicht angemeldet
 
 const mailA = `test-a-${rnd()}@example.com`, mailB = `test-b-${rnd()}@example.com`, pw = 'testpass123';
 
@@ -165,7 +168,7 @@ ok('Eintrag ist danach weg', !r.data);
 
 // --- Optional: Testkonten aufräumen (benötigt service_role-Schlüssel) ---
 if (process.env.SUPABASE_SERVICE_KEY) {
-  const admin = createClient(URL, process.env.SUPABASE_SERVICE_KEY);
+  const admin = createClient(URL, process.env.SUPABASE_SERVICE_KEY, { realtime: { transport: ws } });
   await admin.auth.admin.deleteUser(uidA);
   await admin.auth.admin.deleteUser(uidB);
   console.log('\n(i) Testkonten wurden gelöscht.');
