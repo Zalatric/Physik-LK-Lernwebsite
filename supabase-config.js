@@ -12,6 +12,6 @@
 
    Niemals den „service_role"-Schlüssel hier eintragen! */
 window.SUPABASE_CONFIG = {
-  url: "",
-  anonKey: ""
+  url: "https://giksixuohvmahcgoumrc.supabase.co",
+  anonKey: "sb_publishable_XRs1pOlwaA5iAXnu7iAsIg_Jl-YltdP"
 };
