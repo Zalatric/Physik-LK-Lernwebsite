@@ -60,8 +60,11 @@ create policy profiles_update on public.profiles
 -- 4) Serverseitige Finalisierung eines Uploads.
 --    Prüft: angemeldet, Pfad liegt im eigenen Ordner, Speicherobjekt
 --    existiert wirklich, echte gespeicherte Größe (aus den Objekt-
---    Metadaten, nicht vom Client behauptet). Nur dann entsteht der
---    Datenbankeintrag – fehlgeschlagene Uploads bleiben unsichtbar.
+--    Metadaten, nicht vom Client behauptet). Erst dann entsteht der
+--    Datenbankeintrag UND das Objekt wird über den Finalisierungs-
+--    Marker (status=final) für andere sichtbar. Die Funktion ist
+--    wiederholbar: existiert der Eintrag bereits, wird dessen ID
+--    zurückgegeben (verlorene Antworten sind damit unkritisch).
 create or replace function public.finalize_cloud_upload(
   p_name text, p_fach text, p_category text, p_mime text, p_path text)
 returns uuid
@@ -81,6 +84,12 @@ begin
      or left(p_path, position('/' in p_path) - 1) is distinct from auth.uid()::text then
     raise exception 'Ungültiger Speicherpfad.';
   end if;
+  -- Idempotenz: bereits finalisierte Pfade liefern die bestehende ID
+  select id into v_id from public.cloud_files
+    where path = p_path and owner = auth.uid();
+  if v_id is not null then
+    return v_id;
+  end if;
   select (metadata->>'size')::bigint, metadata->>'mimetype'
     into v_size, v_type
     from storage.objects
@@ -93,6 +102,14 @@ begin
   end if;
   if v_type is not null and v_type is distinct from p_mime then
     raise exception 'Dateityp stimmt nicht überein.';
+  end if;
+  -- Finalisierungs-Marker setzen: erst jetzt ist das Objekt für
+  -- andere Nutzer über die Speicher-Leseregel sichtbar
+  update storage.objects
+    set metadata = coalesce(metadata, '{}'::jsonb) || '{"status":"final"}'::jsonb
+    where bucket_id = 'cloud' and name = p_path;
+  if not found then
+    raise exception 'Datei wurde nicht vollständig hochgeladen.';
   end if;
   insert into public.cloud_files (owner, name, fach, category, size, mime, path)
     values (auth.uid(), p_name, p_fach, p_category, v_size, p_mime, p_path)
@@ -115,23 +132,29 @@ exception when duplicate_object then null; end $$;
 -- 6) Privater Speicher-Bucket: 30 MB je Datei, nur erlaubte Typen
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('cloud', 'cloud', false, 31457280,
-  '["application/pdf","image/png","image/jpeg","image/webp","image/gif",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/zip"]')
+  array['application/pdf','image/png','image/jpeg','image/webp','image/gif',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip']::text[])
 on conflict (id) do update
   set public = false,
       file_size_limit = 31457280,
       allowed_mime_types = excluded.allowed_mime_types;
 
--- Speicher-Sicherheitsregeln: jeder angemeldete Nutzer liest,
--- hochladen und löschen darf man nur im eigenen Ordner ({user-id}/…)
+-- Speicher-Sicherheitsregeln:
+-- Lesen: eigene Objekte immer, fremde nur nach Finalisierung (status=final
+-- im Objekt-Metadatum, gesetzt von finalize_cloud_upload). So sind
+-- abgebrochene/unfertige Uploads für andere nicht abrufbar.
+-- Hochladen und löschen: nur im eigenen Ordner ({user-id}/…)
 drop policy if exists cloud_bucket_read on storage.objects;
 drop policy if exists cloud_bucket_upload on storage.objects;
 drop policy if exists cloud_bucket_delete on storage.objects;
 create policy cloud_bucket_read on storage.objects
-  for select to authenticated using (bucket_id = 'cloud');
+  for select to authenticated
+  using (bucket_id = 'cloud' and (
+    (storage.foldername(name))[1] = auth.uid()::text
+    or (metadata->>'status') = 'final'));
 create policy cloud_bucket_upload on storage.objects
   for insert to authenticated
   with check (bucket_id = 'cloud' and (storage.foldername(name))[1] = auth.uid()::text);

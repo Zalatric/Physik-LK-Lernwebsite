@@ -37,14 +37,15 @@ const cAnon = createClient(URL, KEY);   // nicht angemeldet
 
 const mailA = `test-a-${rnd()}@example.com`, mailB = `test-b-${rnd()}@example.com`, pw = 'testpass123';
 
-// --- 1. Konten anlegen ---
+// --- 1. Konten anlegen (Sitzung erforderlich) ---
 let r = await cA.auth.signUp({ email: mailA, password: pw });
-if (r.error) { console.error('Konto A konnte nicht angelegt werden: ' + r.error.message + '\nIst „Confirm email" deaktiviert?'); process.exit(1); }
+if (r.error) { console.error('Konto A konnte nicht angelegt werden: ' + r.error.message); process.exit(1); }
+if (!r.data.session) { console.error('Keine Sitzung nach Registrierung – ist „Confirm email" deaktiviert?'); process.exit(1); }
 const uidA = r.data.user.id;
 r = await cB.auth.signUp({ email: mailB, password: pw });
-if (r.error) { console.error('Konto B konnte nicht angelegt werden: ' + r.error.message); process.exit(1); }
+if (r.error || !r.data.session) { console.error('Konto B konnte nicht angelegt/angemeldet werden: ' + (r.error?.message || 'keine Sitzung')); process.exit(1); }
 const uidB = r.data.user.id;
-ok('Nutzer A und B können Konten anlegen', true);
+ok('Nutzer A und B können Konten anlegen und sich anmelden', true);
 
 // --- 2. A lädt eine Datei hoch (Speicher + Finalisierung) ---
 const pdfBytes = new Blob(['%PDF-1.4\n% Testdatei Physik-LK\n'], { type: 'application/pdf' });
@@ -55,8 +56,15 @@ r = await cA.rpc('finalize_cloud_upload', {
   p_name: 'Testaufgabe.pdf', p_fach: 'Physik', p_category: 'Aufgaben',
   p_mime: 'application/pdf', p_path: pathA,
 });
-ok('A kann Upload serverseitig finalisieren (Eintrag entsteht)', !r.error && !r.error.message);
+ok('A kann Upload serverseitig finalisieren (Eintrag entsteht)', !r.error && !!r.data);
 const fileId = r.data;
+
+// --- 2b. Finalisierung ist wiederholbar (verlorene Antworten sind unkritisch) ---
+r = await cA.rpc('finalize_cloud_upload', {
+  p_name: 'Testaufgabe.pdf', p_fach: 'Physik', p_category: 'Aufgaben',
+  p_mime: 'application/pdf', p_path: pathA,
+});
+ok('Erneute Finalisierung desselben Pfads ist idempotent', !r.error && r.data === fileId);
 
 // --- 3. B sieht die Datei von A ---
 r = await cB.from('cloud_files').select('*').eq('path', pathA).maybeSingle();
@@ -118,6 +126,25 @@ ok('Ungültiger Dateityp (.exe) wird abgewiesen', !!r.error);
 // --- 11. B kann nicht in A-Ordner hochladen (Path-Traversal-/Ordnerangriff) ---
 r = await cB.storage.from('cloud').upload(`${uidA}/${rnd()}.pdf`, pdfBytes, { contentType: 'application/pdf' });
 ok('B kann nicht in A-Ordner hochladen', !!r.error);
+
+// --- 11b. B kann die Finalisierung nicht für A-Pfade aufrufen ---
+r = await cB.rpc('finalize_cloud_upload', {
+  p_name: 'Angriff.pdf', p_fach: 'Physik', p_category: 'Aufgaben',
+  p_mime: 'application/pdf', p_path: pathA,
+});
+ok('B kann Finalisierung nicht für A-Pfad aufrufen', !!r.error);
+
+// --- 11c. Überschreibversuch: Upload auf As bestehenden Pfad scheitert ---
+r = await cA.storage.from('cloud').upload(pathA, new Blob(['%PDF-1.4 gefälscht'], { type: 'application/pdf' }), { contentType: 'application/pdf' });
+ok('Überschreiben einer bestehenden Datei wird abgewiesen', !!r.error);
+
+// --- 11d. Unfinalisierte Uploads sind für andere nicht abrufbar ---
+const pathPending = `${uidA}/${rnd()}.pdf`;
+await cA.storage.from('cloud').upload(pathPending, pdfBytes, { contentType: 'application/pdf' });
+r = await cB.storage.from('cloud').createSignedUrl(pathPending, 60);
+ok('B erhält keine signierte URL für A-Datei ohne Finalisierung', !!r.error);
+r = await cA.storage.from('cloud').remove([pathPending]);
+ok('A räumt die unfinalisierte Testdatei auf', !r.error);
 
 // --- 12. Finalisierung ohne existierendes Objekt scheitert (kein Scherbeintrag) ---
 r = await cA.rpc('finalize_cloud_upload', {

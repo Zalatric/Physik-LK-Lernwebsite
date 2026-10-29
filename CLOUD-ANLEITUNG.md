@@ -32,7 +32,11 @@ Supabase als Backend:
 - **Finalisierungsfunktion** (`finalize_cloud_upload`): Ein Datenbankeintrag
   entsteht erst, wenn die hochgeladene Datei nachweislich im Speicher liegt
   und die serverseitig ermittelte Größe innerhalb der 30-MB-Grenze ist.
-  Fehlgeschlagene Uploads bleiben dadurch unsichtbar.
+  Gleichzeitig setzt die Funktion einen Finalisierungs-Marker am Speicherobjekt
+  – erst danach dürfen andere Nutzer die Datei abrufen. Abgebrochene oder
+  unfertige Uploads bleiben für alle außer dem Eigentümer unsichtbar. Die
+  Funktion ist wiederholbar: Geht eine Antwort verloren, kann der Aufruf
+  einfach erneut erfolgen, ohne einen doppelten Eintrag zu erzeugen.
 - **Speicher** (`cloud`-Bucket): privat, 30 MB pro Datei, nur erlaubte Typen
   (PDF, Bilder, Office-Dokumente, ZIP). Jeder Nutzer lädt nur in seinen
   eigenen Ordner; Ansehen und Herunterladen läuft über zeitlich begrenzte,
@@ -44,24 +48,29 @@ Supabase als Backend:
 ### 1. Supabase-Projekt anlegen
 
 1. [supabase.com](https://supabase.com) → kostenloses Konto → „New Project".
-2. Name z. B. `physik-lk`, Region `Central EU (Frankfurt)` (DSGVO-freundlich),
-   starkes Datenbank-Passwort setzen und gut aufbewahren.
-3. Der kostenlose Tarif reicht für einen Kurs locker aus.
+2. Name z. B. `physik-lk`, Region `Central EU (Frankfurt)`, starkes
+   Datenbank-Passwort setzen und gut aufbewahren.
+3. Die Kosten und Limits des kostenlosen Tarifs (u. a. Speicherplatz)
+   solltest du vorab in der aktuellen Supabase-Preisliste prüfen.
 
 ### 2. Datenbank einrichten
 
 Im Dashboard: **SQL Editor** → Inhalt von `supabase/schema.sql` einfügen → **Run**.
-Das Skript ist wiederholbar (kann nichts kaputt machen).
+Das Skript ist wiederholbar; es werden vorhandene Regeln ersetzt und fehlende
+Objekte ergänzt. Trotzdem vorher schauen, was drinsteht.
 
 ### 3. Anmeldung konfigurieren
 
 Im Dashboard: **Authentication → Sign Up / Providers**:
-- „Confirm email" (E-Mail-Bestätigung) nach Geschmack:
-  - **Aus** (empfohlen für den Kurs): Registrierung ohne Wartezeit. Dann ist
-    aber keine Passwort-Wiederherstellung per E-Mail möglich.
-  - **An**: jeder muss einmal in sein Postfach schauen, dafür gibt es
-    „Passwort vergessen"-Funktion.
 - „Allow new users to sign up" muss an bleiben (offener Zugang per Link).
+- „Confirm email" (E-Mail-Bestätigung) nach Geschmack:
+  - **Aus**: Registrierung ohne Wartezeit, aber vergessene Passwörter
+    lassen sich nur per E-Mail-Reset wiederherstellen, wenn die
+    angegebene Adresse wirklich existiert und abrufbar ist.
+  - **An**: jeder muss einmal in sein Postfach schauen; dafür ist
+    sichergestellt, dass die E-Mail-Adressen echt sind.
+- Der Link „Passwort vergessen?" in der Cloud verschickt eine
+  Wiederherstellungs-E-Mail – das funktioniert nur mit echten Adressen.
 
 ### 4. Konfiguration eintragen
 
@@ -91,9 +100,11 @@ npm test
 Voraussetzung: „Confirm email" ist deaktiviert (siehe Schritt 3).
 Getestet werden u. a.: B sieht und lädt die Datei von A herunter, B kann
 sie weder über die Datenbank noch über den Speicher löschen, B kann keine
-Einträge unter fremdem Namen anlegen, Unangemeldete erhalten nichts,
-31-MB- und `.exe`-Uploads werden abgewiesen, Uploads ohne echte Datei
-hinterlassen keinen Eintrag, A löscht die eigene Datei.
+Einträge unter fremdem Namen anlegen und die Finalisierung nicht für
+fremde Pfade aufrufen, Überschreibversuche werden abgewiesen, unfinalisierte
+Uploads sind für B nicht abrufbar, Unangemeldete erhalten nichts, 31-MB- und
+`.exe`-Uploads werden abgewiesen, Uploads ohne echte Datei hinterlassen
+keinen Eintrag, die Finalisierung ist wiederholbar, A löscht die eigene Datei.
 
 ## Sicherheit – wie das Eigentümerprinzip durchgesetzt wird
 
@@ -119,8 +130,13 @@ hinterlassen keinen Eintrag, A löscht die eigene Datei.
   Function, wenn gewünscht.
 - **Verwaiste Speicherobjekte** sind möglich, wenn ein Upload nach dem
   Speichern, aber vor der Finalisierung abbricht (Sitzung weg, Tab zu).
-  Sie sind für niemanden sichtbar; gelegentlich kann man sie im Dashboard
-  unter Storage aufräumen.
+  Sie sind für niemanden außer dem Eigentümer sichtbar; gelegentlich kann
+  man sie im Dashboard unter Storage aufräumen.
+- **Löschreihenfolge**: Die Oberfläche löscht immer zuerst den
+  Datenbankeintrag, dann das Speicherobjekt. Löscht jemand das
+  Speicherobjekt direkt über die API, bleibt ein Eintrag ohne Datei
+  (Ansehen/Download schlagen dann fehl). Ein solcher Eintrag lässt sich
+  als Eigentümer ganz normal löschen.
 - **Das bestehende Website-Passwort** bleibt reiner Sichtschutz (wie bisher);
   die Cloud hat ihre eigene, echte Anmeldung.
 - **Testkonten**: Der Test legt zwei Konten an; sie bleiben bestehen,

@@ -149,6 +149,7 @@ section{padding-bottom:90px!important}
 <section id="cloud">
  <h2>Cloud</h2>
  <p class="meta">Gemeinsame Dateien für den Kurs. Hochladen und Ansehen darf jeder Angemeldete, löschen nur die eigenen Dateien.</p>
+ <p class="meta" id="cst"></p>
 
  <div class="card" id="cgate" hidden>
   <h3 id="ctitle">Anmelden</h3>
@@ -157,6 +158,7 @@ section{padding-bottom:90px!important}
    <label for="cpw">Passwort</label><input id="cpw" type="password" autocomplete="current-password" required>
    <p id="cmsg" class="meta" role="alert"></p>
    <div class="row"><button class="btn" id="csubmit" type="submit">Anmelden</button><button class="chip" id="ctoggle" type="button">Neues Konto anlegen</button></div>
+   <p style="margin:10px 0 0"><button class="chip" id="creset" type="button">Passwort vergessen?</button></p>
   </form>
  </div>
 
@@ -184,7 +186,6 @@ section{padding-bottom:90px!important}
   </div>
 
   <div id="cll"></div>
-  <p class="meta" id="cst"></p>
  </div>
 
  <div id="cmodal" class="modal" hidden role="dialog" aria-modal="true" aria-label="Dateivorschau">
@@ -499,6 +500,7 @@ function cloudXhr(path,file,mime,onp){return new Promise(async(res,rej)=>{
  x.open('POST',SUPABASE_CONFIG.url+'/storage/v1/object/cloud/'+path.split('/').map(encodeURIComponent).join('/'));
  x.setRequestHeader('Authorization','Bearer '+session.access_token);
  x.setRequestHeader('Content-Type',mime);
+ x.setRequestHeader('x-metadata',btoa('{"status":"pending"}'));
  x.upload.onprogress=ev=>{if(ev.lengthComputable)onp(ev.loaded/ev.total)};
  x.onload=()=>{if(x.status<300)return res();let m='';try{m=JSON.parse(x.responseText).message}catch(e){}rej(new Error(m||('HTTP '+x.status)))};
  x.onerror=()=>rej(new Error('Netzwerkfehler beim Upload.'));
@@ -513,8 +515,12 @@ async function cloudUploadFile(f){
  catch(x){if(!/already exists/i.test(x&&x.message))throw{msg:'Upload fehlgeschlagen ('+((x&&x.message)||'Fehler')+').'}}
  let fin;try{fin=await sb.rpc('finalize_cloud_upload',{p_name:f.name.slice(0,200),p_fach:$('#cfach').value,p_category:$('#ckat').value,p_mime:mime,p_path:path})}catch(e){fin={error:e}}
  if(fin.error){
-  const{data:chk}=await sb.from('cloud_files').select('id').eq('path',path).maybeSingle();
-  if(chk)return; /* Eintrag existiert doch – Antwort war nur verloren gegangen */
+  /* Prüfen, ob der Eintrag trotzdem existiert (verlorene Antwort).
+     Nur wenn das NEIN sicher ist, wird das Speicherobjekt aufgeräumt –
+     bei unklarem Status bleibt alles liegen, statt etwas kaputtzumachen. */
+  const chk=await sb.from('cloud_files').select('id').eq('path',path).maybeSingle();
+  if(chk.error)throw{msg:'Upload-Status unklar ('+((fin.error&&fin.error.message)||'Fehler')+'). Bitte Seite neu laden.'};
+  if(chk.data)return;
   try{await sb.storage.from('cloud').remove([path])}catch(e2){}
   throw{msg:'Upload fehlgeschlagen ('+((fin.error&&fin.error.message)||'Fehler')+').'};
  }
@@ -523,7 +529,7 @@ $('#cfi').onchange=async e=>{
  if(!cuid)return;
  $('#cprog').hidden=false;
  for(const f of e.target.files){
-  try{await cloudUploadFile(f);ctoast(f.name+' wurde hochgeladen.')}
+  try{await cloudUploadFile(f);ctoast(f.name+' wurde hochgeladen.');cloudLoad()}
   catch(x){ctoast((x&&x.msg)||'Upload fehlgeschlagen.')}
   $('#cprogbar').style.width='0';
  }
@@ -540,6 +546,13 @@ $('#cform').onsubmit=async e=>{e.preventDefault();
  if(r.error){$('#cmsg').textContent=r.error.message;return}
  if(!r.data.session){$('#cmsg').textContent='Konto angelegt. Bitte bestätige die E-Mail und melde dich dann an.';return}
  $('#cmail').value='';$('#cpw').value=''};
+$('#creset').onclick=async()=>{
+ if(!sb)return $('#cmsg').textContent='Cloud ist nicht eingerichtet.';
+ const email=$('#cmail').value.trim();
+ if(!email)return $('#cmsg').textContent='Bitte trage zuerst deine E-Mail ein.';
+ $('#cmsg').textContent='';
+ const{error}=await sb.auth.resetPasswordForEmail(email);
+ $('#cmsg').textContent=error?('Das hat nicht geklappt ('+error.message+').'):'Wenn die E-Mail stimmt, kommt jetzt eine Nachricht zum Zurücksetzen.'};
 $('#cpsave').onclick=async()=>{
  const n=$('#cname').value.trim().slice(0,40);if(!n)return;
  const{error}=await sb.from('profiles').insert({user_id:cuid,display_name:n});
